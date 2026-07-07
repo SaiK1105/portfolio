@@ -12,7 +12,7 @@ export const hero = {
   tagline: "Engineering student building {intelligent systems} with LLMs, agents, and full-stack craft.",
   ctas: [
     { label: "View work", href: "#projects" },
-    { label: "Resume", href: "/resume" },
+    { label: "Resume", href: "/resume.pdf" },
   ],
 } as const;
 
