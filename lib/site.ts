@@ -1,7 +1,7 @@
 export const site = {
   name: "S Sai Kumar",
   shortName: "Sai Kumar",
-  url: "https://saikumar-portfolio.vercel.app", // update after deploy
+  url: "https://saik.co.in",
   title: "S Sai Kumar — LLM & Agentic AI Engineer",
   description:
     "Engineering student at SASTRA building LLM and Agentic AI systems — multimodal video intelligence, agent orchestration with LangGraph, and full-stack web applications.",
