@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — dark editorial system.
+ * One accent (warm sand #E3D5B8) deployed as an alpha ramp; layered
+ * blacks for surfaces; no other hues except education status dots.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --surface-1: #0e0e0e;
+  --surface-2: #161616;
+  --foreground: #e8e4d8;
+  --accent: #e3d5b8;
+  --muted: #9a9a9a;
+
+  --status-present: #34d399;
+  --status-past: #6b7280;
+
+  /* Signature easing — use for ALL transitions. */
+  --ease-signature: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-status-present: var(--status-present);
+  --color-status-past: var(--status-past);
+  --font-sans: var(--font-archivo);
+  --font-serif: var(--font-instrument);
   --font-mono: var(--font-geist-mono);
+  --ease-signature: var(--ease-signature);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Serif-italic accent voice for {fragment} text in headings. */
+.accent-serif {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Card surface recipe from the reference analysis. */
+.card-surface {
+  background: var(--surface-1);
+  border: 1px solid rgb(255 255 255 / 0.06);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 4px 24px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
