@@ -6,10 +6,10 @@ import { ISLAND_SPRING } from "@/lib/motion";
 
 /** Anchor links shown in the expanded island. Mobile shows a subset. */
 const LINKS = [
-  { label: "Work", href: "#projects" },
-  { label: "About", href: "#about" },
-  { label: "Skills", href: "#skills", desktopOnly: true },
-  { label: "Contact", href: "#contact" },
+  { label: "Work", href: "/#projects" },
+  { label: "About", href: "/#about" },
+  { label: "Skills", href: "/#skills", desktopOnly: true },
+  { label: "Contact", href: "/#contact" },
 ] as const;
 
 /**
@@ -60,9 +60,9 @@ export function IslandNav() {
         className="flex items-center gap-1 rounded-full border border-white/10 bg-black/85 px-2 py-2 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08),0_8px_30px_rgb(0_0_0_/_0.6)] backdrop-blur-xl sm:gap-2 sm:px-2.5"
       >
         <a
-          href="#hero"
+          href="/#hero"
           aria-label="Back to top"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-xs tracking-wide text-foreground transition-colors hover:bg-white/5 sm:h-9 sm:w-9"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-xs tracking-wide text-foreground transition-colors ease-[var(--ease-signature)] hover:bg-white/5 sm:h-9 sm:w-9"
         >
           SK
         </a>
@@ -82,7 +82,7 @@ export function IslandNav() {
               <a
                 href={link.href}
                 tabIndex={expanded ? 0 : -1}
-                className="block whitespace-nowrap rounded-full px-3 py-1.5 font-sans text-sm text-muted transition-colors hover:text-foreground sm:px-3.5"
+                className="block whitespace-nowrap rounded-full px-3 py-1.5 font-sans text-sm text-muted transition-colors ease-[var(--ease-signature)] hover:text-foreground sm:px-3.5"
               >
                 {link.label}
               </a>

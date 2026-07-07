@@ -1,6 +1,6 @@
 /**
  * Build-time fetch of GitHub contributions for the activity graph.
- * Writes public/data/contributions.json; on any failure the previously
+ * Writes lib/data/contributions.json; on any failure the previously
  * committed JSON stays in place so offline builds keep working.
  * Run via: bun run scripts/fetch-contributions.mjs (prebuild hook)
  */

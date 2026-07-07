@@ -28,7 +28,7 @@ export function Contact() {
           <li>
             <a
               href={`mailto:${site.email}`}
-              className="text-xl text-foreground underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent"
+              className="text-xl text-foreground underline decoration-accent/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent"
             >
               {site.email}
             </a>
@@ -38,13 +38,19 @@ export function Contact() {
               href={site.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xl text-foreground underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent"
+              className="text-xl text-foreground underline decoration-accent/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent"
             >
               {site.github.replace(/^https?:\/\//, "")}
             </a>
           </li>
           <li className="font-mono text-sm text-muted">
-            {site.location} · {site.phone}
+            {site.location} ·{" "}
+            <a
+              href="tel:+917337354430"
+              className="underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:text-foreground hover:underline hover:decoration-accent/40"
+            >
+              {site.phone}
+            </a>
           </li>
         </ul>
       </Reveal>

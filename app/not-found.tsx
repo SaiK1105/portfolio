@@ -27,7 +27,7 @@ export default function NotFound() {
         </p>
         <a
           href="/"
-          className="mt-10 rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 hover:bg-accent/85"
+          className="mt-10 rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 ease-[var(--ease-signature)] hover:bg-accent/85"
         >
           Back to home
         </a>

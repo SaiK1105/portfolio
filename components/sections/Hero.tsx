@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { hero } from "@/lib/content";
 import { renderAccent } from "@/components/ui/Accent";
-import { fadeUp } from "@/lib/motion";
+import { EASE, fadeUp } from "@/lib/motion";
 
 /** Letters stagger in after the kicker; copy below follows. */
 const KICKER_INDEX = 0;
@@ -86,8 +86,8 @@ export function Hero() {
                   : {})}
                 className={
                   isPrimary
-                    ? "rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 hover:bg-accent/85"
-                    : "rounded-full border border-accent/30 px-7 py-3 text-sm font-semibold text-foreground transition-colors duration-300 hover:border-accent/60"
+                    ? "rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 ease-[var(--ease-signature)] hover:bg-accent/85"
+                    : "rounded-full border border-accent/30 px-7 py-3 text-sm font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-signature)] hover:border-accent/60"
                 }
               >
                 {cta.label}
@@ -110,7 +110,7 @@ export function Hero() {
           transition={
             prefersReducedMotion
               ? undefined
-              : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 2.4, repeat: Infinity, ease: EASE }
           }
         >
           scroll
