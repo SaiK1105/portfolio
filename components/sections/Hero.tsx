@@ -10,7 +10,7 @@ import {
 } from "framer-motion";
 import { hero } from "@/lib/content";
 import { renderAccent } from "@/components/ui/Accent";
-import { EASE, fadeUp, ISLAND_SPRING } from "@/lib/motion";
+import { fadeUp, ISLAND_SPRING } from "@/lib/motion";
 
 /** Letters stagger in after the kicker; copy below follows. */
 const KICKER_INDEX = 0;
@@ -190,7 +190,10 @@ export function Hero() {
           transition={
             prefersReducedMotion
               ? undefined
-              : { duration: 2.4, repeat: Infinity, ease: EASE }
+              : // Symmetric bounce loops read wrong with the signature ease-out
+                // (EASE); infinite up/down loops are the documented exception —
+                // they use "easeInOut" to stay balanced in both directions.
+                { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
           }
         >
           scroll

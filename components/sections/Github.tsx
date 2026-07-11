@@ -47,7 +47,7 @@ export function Github() {
             href={site.github}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono text-sm text-foreground transition-colors duration-300 [transition-timing-function:var(--ease-signature)] hover:text-accent"
+            className="font-mono text-sm text-foreground transition-colors duration-300 ease-[var(--ease-signature)] hover:text-accent"
           >
             @{site.githubUser} <span aria-hidden="true">&rarr;</span>
           </a>
@@ -68,6 +68,9 @@ export function Github() {
             ))}
           </div>
         </div>
+        <p className="mt-2 font-mono text-xs text-muted sm:hidden" aria-hidden="true">
+          scroll &rarr;
+        </p>
       </Reveal>
     </section>
   );

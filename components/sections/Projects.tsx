@@ -18,7 +18,7 @@ export function Projects() {
         {projects.items.map((project, i) => (
           <Reveal key={project.number} delay={i}>
             <article
-              className="card-surface rounded-[2rem] p-8 transition-[border-color,transform] duration-500 [transition-timing-function:var(--ease-signature)] hover:-translate-y-0.5 hover:border-accent/20 sm:p-10"
+              className="card-surface rounded-[2rem] p-8 transition-[border-color,transform] duration-500 ease-[var(--ease-signature)] hover:-translate-y-0.5 hover:border-accent/20 sm:p-10"
             >
               <div className="flex items-start justify-between gap-6">
                 <span

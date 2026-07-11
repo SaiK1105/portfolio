@@ -35,6 +35,7 @@ export const metadata: Metadata = {
     "AI portfolio",
   ],
   authors: [{ name: site.name, url: site.github }],
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: site.url,

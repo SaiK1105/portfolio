@@ -7,7 +7,7 @@ import { site } from "@/lib/site";
 import { VIEWPORT_ONCE } from "@/lib/motion";
 
 const CHAR_DELAY_MS = 30;
-const LINE_PAUSE_MS = 700;
+const LINE_PAUSE_MS = 350;
 
 const HINT_LINE = "type 'help' or ask me anything";
 const PROMPT = "sai@agent:~$ ";
@@ -99,6 +99,7 @@ export function TerminalCard() {
 
   const [history, setHistory] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const conversationRef = useRef<ConversationMessage[]>([]);
   const [dayLine, setDayLine] = useState<string | null>(null);
@@ -275,56 +276,75 @@ export function TerminalCard() {
           })}
         </div>
 
-        {introDone && (
-          <div ref={scrollRef} className="mt-4 max-h-[320px] space-y-1 overflow-y-auto">
-            {dayLine && <div className="text-muted">{dayLine}</div>}
-            <div className="text-muted">{HINT_LINE}</div>
+        {/*
+          The scrollback + prompt row mounts immediately (not gated on
+          introDone) so visitors see from second one that this terminal
+          takes input — it's just dimmed and disabled until the intro
+          finishes typing.
+        */}
+        <div
+          ref={scrollRef}
+          className="mt-4 max-h-[320px] space-y-1 overflow-y-auto overscroll-contain"
+        >
+          {introDone && (
+            <>
+              {dayLine && <div className="text-muted">{dayLine}</div>}
+              <div className="text-accent/90">{HINT_LINE}</div>
 
-            {history.map((entry, i) => {
-              if (entry.kind === "thinking") {
+              {history.map((entry, i) => {
+                if (entry.kind === "thinking") {
+                  return (
+                    <div key={i} className="text-muted">
+                      thinking<span className="animate-pulse">…</span>
+                    </div>
+                  );
+                }
+                if (entry.kind === "echo") {
+                  return (
+                    <div key={i} className="text-accent/90">
+                      {PROMPT}
+                      {entry.text}
+                    </div>
+                  );
+                }
                 return (
-                  <div key={i} className="text-muted">
-                    thinking<span className="animate-pulse">…</span>
-                  </div>
-                );
-              }
-              if (entry.kind === "echo") {
-                return (
-                  <div key={i} className="text-accent/90">
-                    {PROMPT}
+                  <div
+                    key={i}
+                    className={`whitespace-pre-wrap ${entry.tone === "muted" ? "text-muted" : "text-accent/90"}`}
+                  >
                     {entry.text}
                   </div>
                 );
-              }
-              return (
-                <div
-                  key={i}
-                  className={`whitespace-pre-wrap ${entry.tone === "muted" ? "text-muted" : "text-accent/90"}`}
-                >
-                  {entry.text}
-                </div>
-              );
-            })}
+              })}
+            </>
+          )}
 
-            <form onSubmit={handleSubmit} className="flex items-baseline text-accent/90">
-              <span className="shrink-0">{PROMPT}</span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
-                disabled={isLoading}
-                maxLength={MAX_INPUT_LENGTH}
-                aria-label="terminal input"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                className="min-w-0 flex-1 border-0 bg-transparent font-mono text-accent/90 caret-accent outline-none disabled:opacity-60"
-              />
-            </form>
-          </div>
-        )}
+          <form
+            onSubmit={handleSubmit}
+            className={`flex items-baseline text-accent/90 transition-opacity duration-300 ease-[var(--ease-signature)] ${
+              introDone ? "opacity-100" : "opacity-50"
+            }`}
+          >
+            <span className="shrink-0">{PROMPT}</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
+              disabled={isLoading || !introDone}
+              maxLength={MAX_INPUT_LENGTH}
+              aria-label="terminal input"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className="min-w-0 flex-1 border-0 bg-transparent font-mono text-accent/90 caret-accent outline-none"
+            />
+            {!input && !inputFocused && <Cursor />}
+          </form>
+        </div>
       </div>
     </div>
   );

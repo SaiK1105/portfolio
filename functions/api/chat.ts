@@ -17,6 +17,96 @@ const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_MESSAGES = 8;
 const MAX_CHARS = 500;
 
+// (b) Reject oversized bodies before we ever touch JSON.parse.
+const MAX_BODY_BYTES = 8 * 1024; // 8KB
+
+// (c) Best-effort per-IP rate limit.
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+
+// (a) Hosts allowed to call this endpoint from a browser.
+const ALLOWED_HOSTS = new Set(["saik.co.in", "www.saik.co.in"]);
+const PAGES_DEV_SUFFIX = ".saik-a8u.pages.dev";
+
+const isAllowedHost = (host: string): boolean =>
+  ALLOWED_HOSTS.has(host) || host.endsWith(PAGES_DEV_SUFFIX);
+
+/**
+ * (a) Same-origin gate.
+ *
+ * Modern browsers attach an `Origin` header on every same-site and
+ * cross-site POST/fetch, so a legitimate in-browser call to this endpoint
+ * always carries one. We check it first and fall back to `Referer` for the
+ * (rare) privacy-hardened browser/extension that strips Origin but keeps
+ * Referer.
+ *
+ * Tradeoff: if BOTH headers are absent we reject with 403. That also blocks
+ * bare `curl`/server-to-server calls that don't set either header — an
+ * intentional cost. This endpoint has no auth and is backed by a metered AI
+ * binding, so "no verifiable origin" is treated as untrusted rather than
+ * "assume friendly tooling." Testing with curl needs
+ * `-H "Origin: https://saik.co.in"`.
+ */
+const originAllowed = (request: Request): boolean => {
+  const origin = request.headers.get("Origin");
+  if (origin) {
+    try {
+      return isAllowedHost(new URL(origin).host);
+    } catch {
+      return false;
+    }
+  }
+
+  const referer = request.headers.get("Referer");
+  if (referer) {
+    try {
+      return isAllowedHost(new URL(referer).host);
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+};
+
+/**
+ * (c) Per-IP rate limit via the Cache API (`caches.default`).
+ *
+ * This is NOT a real distributed limiter: `caches.default` is scoped to the
+ * Cloudflare colo that handles the request, not global, so an attacker
+ * spread across multiple colos (or just retrying until they land on a
+ * fresh one) can exceed the nominal budget. There's no KV/Durable Object
+ * binding on this project to do it properly, and this is a portfolio site,
+ * not a paid product — best-effort, single-colo throttling is an
+ * acceptable tradeoff here: it stops the common case (one script hammering
+ * the endpoint) without adding infra.
+ */
+const checkRateLimit = async (request: Request): Promise<boolean> => {
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  // `caches.default` is a Cloudflare Workers extension not present in
+  // lib.dom's CacheStorage typings, hence the cast.
+  const cache = (caches as unknown as { default: Cache }).default;
+  const cacheKey = new Request(`https://rate-limit.internal/chat/${ip}`);
+
+  const cached = await cache.match(cacheKey);
+  const count = cached ? Number(await cached.text()) : 0;
+
+  if (count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  await cache.put(
+    cacheKey,
+    new Response(String(count + 1), {
+      headers: {
+        "Cache-Control": `max-age=${RATE_LIMIT_WINDOW_SECONDS}`,
+      },
+    }),
+  );
+
+  return true;
+};
+
 const SYSTEM_PROMPT = `You are the terminal agent on saik.co.in, the portfolio of S Sai Kumar. You speak in a terminal: lowercase, concise, no markdown, max ~80 words. Friendly, a little playful, never sycophantic.
 
 Facts (only source of truth — never invent beyond these):
@@ -33,6 +123,27 @@ If asked something unrelated to Sai or this site, give a one-line friendly redir
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
+
+  // (a) Same-origin gate.
+  if (!originAllowed(request)) {
+    return json({ error: "forbidden" }, 403);
+  }
+
+  // (b) Content-Length cap, checked before we read/parse the body.
+  const contentLength = request.headers.get("Content-Length");
+  if (contentLength && Number(contentLength) > MAX_BODY_BYTES) {
+    return json({ error: "payload too large" }, 413);
+  }
+
+  // (c) Per-IP rate limit.
+  const withinLimit = await checkRateLimit(request);
+  if (!withinLimit) {
+    return json(
+      { error: "429: rate limit hit — cool down a sec and try again" },
+      429,
+    );
+  }
+
   try {
     const body = (await request.json()) as { messages?: ChatMessage[] };
     const history = (body.messages ?? [])

@@ -3,7 +3,7 @@ import type { Variants } from "framer-motion";
 /** The single signature easing used across the entire site. */
 export const EASE = [0.16, 1, 0.3, 1] as const;
 
-export const DURATION = { fast: 0.4, base: 0.7, slow: 1.1 } as const;
+export const DURATION = { fast: 0.4, base: 0.7 } as const;
 
 /** Viewport settings for scroll-triggered entrances: fire once, slightly early. */
 export const VIEWPORT_ONCE = { once: true, margin: "-80px" } as const;
