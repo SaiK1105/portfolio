@@ -22,8 +22,9 @@ export default function NotFound() {
         <h1 className="mt-3 text-5xl font-bold leading-[0.95] tracking-tight text-foreground sm:text-6xl">
           Page not <span className="accent-serif text-accent">found</span>.
         </h1>
-        <p className="mt-5 max-w-md text-muted">
-          The page you're looking for doesn't exist or has moved.
+        <p className="mt-5 max-w-md font-mono text-sm text-muted">
+          agent could not resolve this route. traceback: page not found in
+          any known workflow.
         </p>
         <a
           href="/"

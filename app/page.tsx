@@ -1,4 +1,5 @@
 import { IslandNav } from "@/components/ui/IslandNav";
+import { TraceDivider } from "@/components/ui/TraceDivider";
 import { Hero } from "@/components/sections/Hero";
 import { About } from "@/components/sections/About";
 import { Skills } from "@/components/sections/Skills";
@@ -15,10 +16,13 @@ export default function Home() {
       <main className="flex flex-1 flex-col">
         <Hero />
         <About />
+        <TraceDivider />
         <Skills />
         <Projects />
+        <TraceDivider />
         <Github />
         <Education />
+        <TraceDivider />
         <Contact />
       </main>
       <Footer />

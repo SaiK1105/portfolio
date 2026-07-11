@@ -1,13 +1,99 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState, type MouseEvent } from "react";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 import { hero } from "@/lib/content";
 import { renderAccent } from "@/components/ui/Accent";
-import { EASE, fadeUp } from "@/lib/motion";
+import { EASE, fadeUp, ISLAND_SPRING } from "@/lib/motion";
 
 /** Letters stagger in after the kicker; copy below follows. */
 const KICKER_INDEX = 0;
 const LETTER_BASE_INDEX = 1;
+
+/** Magnetic CTA tuning — cursor must be within this radius (px) to pull. */
+const MAGNETIC_RADIUS = 80;
+const MAGNETIC_STRENGTH = 6;
+
+/** True only for pointers that can actually hover (excludes touch). */
+function useHoverCapable() {
+  const [hoverCapable, setHoverCapable] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover)");
+    setHoverCapable(mq.matches);
+    const handleChange = (e: MediaQueryListEvent) => setHoverCapable(e.matches);
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
+  }, []);
+
+  return hoverCapable;
+}
+
+/** A CTA pill that subtly leans toward the cursor when it's nearby. */
+function MagneticCta({
+  cta,
+  index,
+  isExternalDoc,
+  className,
+}: {
+  cta: { label: string; href: string };
+  index: number;
+  isExternalDoc: boolean;
+  className: string;
+}) {
+  const prefersReducedMotion = useReducedMotion();
+  const hoverCapable = useHoverCapable();
+  const magneticEnabled = hoverCapable && !prefersReducedMotion;
+
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const springX = useSpring(mx, ISLAND_SPRING);
+  const springY = useSpring(my, ISLAND_SPRING);
+  const translate = useMotionTemplate`${springX}px ${springY}px`;
+
+  function handleMouseMove(e: MouseEvent<HTMLAnchorElement>) {
+    if (!magneticEnabled) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    if (distance > MAGNETIC_RADIUS) {
+      mx.set(0);
+      my.set(0);
+      return;
+    }
+    const pull = (1 - distance / MAGNETIC_RADIUS) * MAGNETIC_STRENGTH;
+    mx.set((dx / MAGNETIC_RADIUS) * pull);
+    my.set((dy / MAGNETIC_RADIUS) * pull);
+  }
+
+  function handleMouseLeave() {
+    mx.set(0);
+    my.set(0);
+  }
+
+  return (
+    <motion.a
+      href={cta.href}
+      variants={fadeUp}
+      custom={index}
+      whileTap={{ scale: 0.97 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={magneticEnabled ? { translate } : undefined}
+      {...(isExternalDoc ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className={className}
+    >
+      {cta.label}
+    </motion.a>
+  );
+}
 
 export function Hero() {
   const prefersReducedMotion = useReducedMotion();
@@ -75,23 +161,17 @@ export function Hero() {
             const isPrimary = i === 0;
             const isExternalDoc = !cta.href.startsWith("#");
             return (
-              <motion.a
+              <MagneticCta
                 key={cta.label}
-                href={cta.href}
-                variants={fadeUp}
-                custom={taglineIndex + 1 + i}
-                whileTap={{ scale: 0.97 }}
-                {...(isExternalDoc
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
+                cta={cta}
+                index={taglineIndex + 1 + i}
+                isExternalDoc={isExternalDoc}
                 className={
                   isPrimary
                     ? "rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 ease-[var(--ease-signature)] hover:bg-accent/85"
                     : "rounded-full border border-accent/30 px-7 py-3 text-sm font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-signature)] hover:border-accent/60"
                 }
-              >
-                {cta.label}
-              </motion.a>
+              />
             );
           })}
         </div>

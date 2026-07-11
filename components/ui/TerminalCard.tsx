@@ -15,6 +15,17 @@ const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_TURNS = 8;
 const REQUEST_TIMEOUT_MS = 15_000;
 
+/** Day-flavored line above the hint, keyed by Date#getDay() (0 = Sunday). */
+const DAY_GREETINGS: Record<number, string> = {
+  0: "sunday: existential refactoring",
+  1: "monday: compiling motivation…",
+  2: "tuesday: cache warm, brain cold",
+  3: "wednesday: reality.exe still responding",
+  4: "thursday: nearly there, allegedly",
+  5: "friday: shipping before the weekend",
+  6: "saturday: running in maintenance mode",
+};
+
 type ConversationMessage = { role: "user" | "assistant"; content: string };
 
 type Entry =
@@ -90,6 +101,13 @@ export function TerminalCard() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const conversationRef = useRef<ConversationMessage[]>([]);
+  const [dayLine, setDayLine] = useState<string | null>(null);
+
+  // Computed client-side only — the day depends on the visitor's clock,
+  // so resolving it during SSR would risk a hydration mismatch.
+  useEffect(() => {
+    setDayLine(DAY_GREETINGS[new Date().getDay()] ?? null);
+  }, []);
 
   useEffect(() => {
     if (!isInView || skipTyping) return;
@@ -259,6 +277,7 @@ export function TerminalCard() {
 
         {introDone && (
           <div ref={scrollRef} className="mt-4 max-h-[320px] space-y-1 overflow-y-auto">
+            {dayLine && <div className="text-muted">{dayLine}</div>}
             <div className="text-muted">{HINT_LINE}</div>
 
             {history.map((entry, i) => {
