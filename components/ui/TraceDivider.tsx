@@ -43,6 +43,13 @@ export function TraceDivider() {
         preserveAspectRatio="none"
         className="block h-12 w-full"
       >
+        <defs>
+          <linearGradient id="trace-pulse-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--accent-1)" />
+            <stop offset="100%" stopColor="var(--accent-2)" />
+          </linearGradient>
+        </defs>
+
         <path
           d={TRACE_PATH}
           fill="none"
@@ -52,7 +59,7 @@ export function TraceDivider() {
         />
 
         {NODES.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={2} className="fill-accent/50" />
+          <circle key={i} cx={x} cy={y} r={2} className="fill-accent-2/60" />
         ))}
 
         {!prefersReducedMotion && (
@@ -62,7 +69,7 @@ export function TraceDivider() {
             strokeWidth={1.5}
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
-            className="stroke-accent"
+            stroke="url(#trace-pulse-gradient)"
             pathLength={PULSE_LENGTH}
             initial={{ pathOffset: -PULSE_LENGTH, opacity: 0 }}
             animate={

@@ -26,9 +26,13 @@ export function Contact() {
       <Reveal delay={2}>
         <a
           href={`mailto:${site.email}`}
-          className="mt-16 inline-block text-2xl font-bold text-foreground underline decoration-accent/40 underline-offset-8 transition-colors ease-[var(--ease-signature)] hover:decoration-accent sm:text-4xl"
+          className="group relative mt-16 inline-block pb-2 text-2xl font-bold text-foreground no-underline sm:text-4xl"
         >
           {site.email}
+          <span
+            aria-hidden="true"
+            className="grad absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-50 transition-transform duration-500 ease-[var(--ease-signature)] group-hover:scale-x-100"
+          />
         </a>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-sm text-muted">

@@ -57,12 +57,12 @@ export function IslandNav() {
           }
         }}
         transition={ISLAND_SPRING}
-        className="flex items-center gap-1 rounded-full border border-white/10 bg-black/85 px-2 py-2 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08),0_8px_30px_rgb(0_0_0_/_0.6)] backdrop-blur-xl sm:gap-2 sm:px-2.5"
+        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2 py-2 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08),0_8px_30px_rgb(0_0_0_/_0.6)] backdrop-blur-2xl sm:gap-2 sm:px-2.5"
       >
         <a
           href="/#hero"
           aria-label="Back to top"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-xs tracking-wide text-foreground transition-colors ease-[var(--ease-signature)] hover:bg-white/5 sm:h-9 sm:w-9"
+          className="grad-text flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-xs font-semibold tracking-wide transition-colors ease-[var(--ease-signature)] hover:bg-white/5 sm:h-9 sm:w-9"
         >
           SK
         </a>
@@ -82,7 +82,7 @@ export function IslandNav() {
               <a
                 href={link.href}
                 tabIndex={expanded ? 0 : -1}
-                className="block whitespace-nowrap rounded-full px-3 py-1.5 font-sans text-sm text-muted transition-colors ease-[var(--ease-signature)] hover:text-foreground sm:px-3.5"
+                className="block whitespace-nowrap rounded-full px-3 py-1.5 font-sans text-sm text-muted transition-colors ease-[var(--ease-signature)] hover:bg-clip-text hover:text-transparent hover:[background-image:linear-gradient(100deg,var(--accent-1)_0%,var(--accent-2)_60%,var(--accent-3)_120%)] focus-visible:bg-clip-text focus-visible:text-transparent focus-visible:[background-image:linear-gradient(100deg,var(--accent-1)_0%,var(--accent-2)_60%,var(--accent-3)_120%)] sm:px-3.5"
               >
                 {link.label}
               </a>

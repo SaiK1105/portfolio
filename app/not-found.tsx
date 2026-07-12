@@ -20,7 +20,7 @@ export default function NotFound() {
           04 - Not found
         </p>
         <h1 className="mt-3 text-5xl font-bold leading-[0.95] tracking-tight text-foreground sm:text-6xl">
-          Page not <span className="accent-serif text-accent">found</span>.
+          Page not <span className="grad-text font-semibold">found</span>.
         </h1>
         <p className="mt-5 max-w-md font-mono text-sm text-muted">
           agent could not resolve this route. traceback: page not found in
@@ -28,7 +28,7 @@ export default function NotFound() {
         </p>
         <a
           href="/"
-          className="mt-10 rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 ease-[var(--ease-signature)] hover:bg-accent/85"
+          className="glow-pulse grad mt-10 rounded-full px-7 py-3 text-sm font-semibold text-background transition-transform duration-300 ease-[var(--ease-signature)] hover:scale-[1.03]"
         >
           Back to home
         </a>

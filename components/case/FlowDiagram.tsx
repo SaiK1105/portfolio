@@ -20,7 +20,7 @@ export function FlowDiagram({ steps }: { steps: readonly Step[] }) {
     <div className="relative mt-10 w-full">
       <span
         aria-hidden="true"
-        className="absolute left-[3px] top-3 bottom-3 w-px bg-accent/30"
+        className="absolute left-[3px] top-3 bottom-3 w-px bg-gradient-to-b from-accent-1/50 to-accent-2/50"
       />
       <ol>
         {steps.map((step, i) => {
@@ -28,7 +28,7 @@ export function FlowDiagram({ steps }: { steps: readonly Step[] }) {
           return (
             <li key={step.label}>
               {startsParallel && (
-                <p className="ml-8 pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-accent/60 sm:ml-10">
+                <p className="ml-8 pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-3/80 sm:ml-10">
                   runs in parallel
                 </p>
               )}
@@ -45,11 +45,11 @@ export function FlowDiagram({ steps }: { steps: readonly Step[] }) {
                     aria-hidden="true"
                     className={
                       "absolute left-0 top-6 h-2 w-2 -translate-x-1/2 rounded-full" +
-                      (step.parallel ? " bg-accent/60" : " bg-accent")
+                      (step.parallel ? " bg-accent-2/60" : " bg-accent-2")
                     }
                   />
                   <div className="flex items-baseline gap-4 sm:gap-6">
-                    <span className="shrink-0 font-mono text-xs text-accent/60">
+                    <span className="shrink-0 font-mono text-xs text-accent-1/70">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <p>

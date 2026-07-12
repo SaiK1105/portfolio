@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 import { skills } from "@/lib/content";
-import { SectionHeading } from "@/components/ui/SectionHeading";
 
 /**
- * Skills — two full-width auto-scrolling marquee rows instead of static
- * cards. Row 1 combines Languages + Web & Tools, row 2 is AI & ML, both
+ * SkillsMarquee — two full-width auto-scrolling marquee rows, extracted
+ * from the former standalone Skills section so it can live inside a bento
+ * cell. Row 1 combines Languages + Web & Tools, row 2 is AI & ML, both
  * sourced from lib/content.ts skills.groups. Content is duplicated so the
  * translateX loop is seamless; under prefers-reduced-motion the rows
  * collapse to a static wrapped grid (duplicate copy hidden, animation off,
@@ -47,14 +47,14 @@ function ChipList({ nodes, copy }: { nodes: RowNode[]; copy: "a" | "b" }) {
         node.kind === "label" ? (
           <span
             key={`${copy}-${node.key}`}
-            className="shrink-0 rounded-full border border-accent/30 px-3 py-1 font-mono text-sm text-accent"
+            className="grad shrink-0 rounded-full px-3 py-1 font-mono text-sm font-semibold text-background"
           >
             {node.text}
           </span>
         ) : (
           <span
             key={`${copy}-${node.key}`}
-            className="shrink-0 rounded-full border border-white/8 px-3 py-1 text-sm text-foreground/90 transition-colors duration-300 ease-[var(--ease-signature)] hover:border-accent/40"
+            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-foreground/90 transition-colors duration-300 ease-[var(--ease-signature)] hover:border-accent-2/50"
           >
             {node.text}
           </span>
@@ -102,9 +102,9 @@ function MarqueeRow({
   );
 }
 
-export function Skills() {
+export function SkillsMarquee() {
   return (
-    <section id="skills" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-28">
+    <>
       <style>{`
         @keyframes marquee-left {
           from { transform: translateX(0); }
@@ -116,9 +116,7 @@ export function Skills() {
         }
       `}</style>
 
-      <SectionHeading kicker="02 - Skills" title="What I {work with}." />
-
-      <div className="mt-14 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <MarqueeRow
           nodes={row1}
           animationName="marquee-left"
@@ -132,6 +130,6 @@ export function Skills() {
           ariaLabel="AI & ML skills"
         />
       </div>
-    </section>
+    </>
   );
 }

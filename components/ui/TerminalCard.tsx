@@ -83,7 +83,7 @@ function Cursor() {
  * resolve instantly; anything else is forwarded to /api/chat.
  * Respects prefers-reduced-motion by rendering the intro instantly.
  */
-export function TerminalCard() {
+export function TerminalCard({ className = "" }: { className?: string } = {}) {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -234,9 +234,13 @@ export function TerminalCard() {
   }
 
   return (
-    <div ref={ref} className="card-surface overflow-hidden rounded-2xl" onClick={focusInput}>
+    <div
+      ref={ref}
+      className={`card-surface flex flex-col overflow-hidden rounded-2xl ${className}`}
+      onClick={focusInput}
+    >
       {/* Header row */}
-      <div className="flex items-center gap-2 border-b border-white/6 px-5 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-3">
         <span className="flex gap-1.5" aria-hidden="true">
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
@@ -246,11 +250,11 @@ export function TerminalCard() {
       </div>
 
       {/* Body */}
-      <div className="px-5 py-6 font-mono text-sm leading-relaxed">
+      <div className="flex min-h-0 flex-1 flex-col px-5 py-6 font-mono text-sm leading-relaxed">
         {/* Accessible full-text fallback; visual typing below is decorative. */}
         <p className="sr-only">{lines.join(". ")}</p>
 
-        <div aria-hidden="true">
+        <div aria-hidden="true" className="shrink-0">
           {lines.map((line, i) => {
             const isLast = i === lines.length - 1;
             const colorClass = isLast ? "text-status-present" : "text-accent/90";
@@ -284,7 +288,7 @@ export function TerminalCard() {
         */}
         <div
           ref={scrollRef}
-          className="mt-4 max-h-[320px] space-y-1 overflow-y-auto overscroll-contain"
+          className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain"
         >
           {introDone && (
             <>
@@ -302,7 +306,7 @@ export function TerminalCard() {
                 if (entry.kind === "echo") {
                   return (
                     <div key={i} className="text-accent/90">
-                      {PROMPT}
+                      <span className="text-accent-1">{PROMPT}</span>
                       {entry.text}
                     </div>
                   );
@@ -325,7 +329,7 @@ export function TerminalCard() {
               introDone ? "opacity-100" : "opacity-50"
             }`}
           >
-            <span className="shrink-0">{PROMPT}</span>
+            <span className="shrink-0 text-accent-1">{PROMPT}</span>
             <input
               ref={inputRef}
               type="text"

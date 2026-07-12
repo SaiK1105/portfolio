@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { Archivo, Instrument_Serif, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
 import { site } from "@/lib/site";
+import { Orbs } from "@/components/ui/Orbs";
 import "./globals.css";
 
-const archivo = Archivo({
-  variable: "--font-archivo",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700", "800"],
+  weight: ["500", "700"],
 });
 
-const instrument = Instrument_Serif({
-  variable: "--font-instrument",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: "400",
-  style: "italic",
+  weight: ["400", "500"],
 });
 
 const geistMono = Geist_Mono({
@@ -73,13 +73,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${instrument.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
+        <Orbs />
         {children}
         <div
           aria-hidden="true"

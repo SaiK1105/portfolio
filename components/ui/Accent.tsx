@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 
 /**
- * Renders copy where {braced} fragments become serif-italic accent text.
- * "Let's build {something together}." → sans + <em class="accent-serif">
+ * Renders copy where {braced} fragments become gradient accent text.
+ * "Let's build {something together}." → sans + <span class="grad-text">
  */
 export function renderAccent(text: string): ReactNode[] {
   return text.split(/(\{[^}]+\})/).map((part, i) =>
     part.startsWith("{") ? (
-      <em key={i} className="accent-serif text-accent">
+      <span key={i} className="grad-text font-semibold">
         {part.slice(1, -1)}
-      </em>
+      </span>
     ) : (
       <span key={i}>{part}</span>
     ),

@@ -65,6 +65,13 @@ const MOTIFS: Record<string, () => ReactElement> = {
   "03": OpenWellMotif,
 };
 
+/** Per-project motif accent — ARGUS violet, VoMP cyan, OpenWell pink. */
+const MOTIF_COLOR: Record<string, string> = {
+  "01": "text-accent-1",
+  "02": "text-accent-2",
+  "03": "text-accent-3",
+};
+
 export function Projects() {
   return (
     <section id="projects" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-28">
@@ -82,7 +89,7 @@ export function Projects() {
                 {Motif ? (
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute right-8 top-8 hidden h-20 w-[140px] text-accent opacity-[0.16] sm:block"
+                    className={`pointer-events-none absolute right-8 top-8 hidden h-20 w-[140px] opacity-25 sm:block ${MOTIF_COLOR[project.number] ?? "text-accent-1"}`}
                   >
                     <Motif />
                   </div>
@@ -91,11 +98,11 @@ export function Projects() {
                 <div className="flex items-start justify-between gap-6">
                   <span
                     aria-hidden="true"
-                    className="text-6xl font-extrabold leading-none text-accent/15 sm:text-7xl"
+                    className="grad-text text-6xl font-extrabold leading-none opacity-25 sm:text-7xl"
                   >
                     {project.number}
                   </span>
-                  <span className="rounded-full border border-accent/20 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-accent/80">
+                  <span className="rounded-full border border-accent-1/30 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-2">
                     {project.kicker}
                   </span>
                 </div>
@@ -103,7 +110,7 @@ export function Projects() {
                 <h3 className="mt-6 text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
                   {project.name}
                 </h3>
-                <p className="accent-serif mt-2 text-xl text-accent">{project.title}</p>
+                <p className="grad-text mt-2 text-xl">{project.title}</p>
 
                 <p className="mt-5 max-w-2xl leading-relaxed text-muted">
                   {project.description}
@@ -140,7 +147,7 @@ export function Projects() {
                             href={link.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-accent underline decoration-accent/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent"
+                            className="grad-text font-semibold underline decoration-accent-1/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent-2"
                           >
                             {link.label} ↗
                           </a>
@@ -149,7 +156,7 @@ export function Projects() {
                         <li key={link.href}>
                           <a
                             href={link.href}
-                            className="text-accent underline decoration-accent/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent"
+                            className="grad-text font-semibold underline decoration-accent-1/40 underline-offset-4 transition-colors ease-[var(--ease-signature)] hover:decoration-accent-2"
                           >
                             {link.label}
                           </a>

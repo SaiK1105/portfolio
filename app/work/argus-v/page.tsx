@@ -67,7 +67,7 @@ export default function ArgusVCaseStudy() {
             <h1 className="mt-3 text-5xl font-bold leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               {hero.title}
             </h1>
-            <p className="accent-serif mt-6 max-w-2xl text-2xl text-accent sm:text-3xl">
+            <p className="grad-text mt-6 max-w-2xl text-2xl font-semibold sm:text-3xl">
               {hero.subtitle}
             </p>
           </Reveal>
@@ -120,7 +120,7 @@ export default function ArgusVCaseStudy() {
           <SectionHeading kicker={thesis.kicker} title={thesis.title} />
 
           <Reveal delay={1}>
-            <p className="accent-serif mt-8 max-w-3xl text-2xl leading-snug text-accent sm:text-3xl">
+            <p className="grad-text mt-8 max-w-3xl text-2xl font-semibold leading-snug sm:text-3xl">
               &ldquo;{thesis.quote}&rdquo;
             </p>
           </Reveal>
@@ -129,7 +129,7 @@ export default function ArgusVCaseStudy() {
             {thesis.stats.map((stat, i) => (
               <Reveal key={stat.label} delay={i}>
                 <div className="card-surface p-6">
-                  <p className="text-5xl font-extrabold tracking-tight text-accent sm:text-6xl">
+                  <p className="grad-text text-5xl font-extrabold tracking-tight sm:text-6xl">
                     {stat.value}
                   </p>
                   <p className="mt-2 font-mono text-xs text-muted">{stat.label}</p>
@@ -165,11 +165,11 @@ export default function ArgusVCaseStudy() {
             {lessons.items.map((item, i) => (
               <Reveal key={item.problem} delay={i}>
                 <div className="card-surface h-full rounded-2xl p-6">
-                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent/80">
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-2">
                     {item.problem}
                   </p>
                   <p className="mt-3 leading-relaxed text-muted">
-                    <span className="text-accent">→</span> {item.fix}
+                    <span className="text-accent-1">→</span> {item.fix}
                   </p>
                 </div>
               </Reveal>

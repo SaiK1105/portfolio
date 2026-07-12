@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { hero } from "@/lib/content";
 import { renderAccent } from "@/components/ui/Accent";
+import { TerminalCard } from "@/components/ui/TerminalCard";
 import { fadeUp, ISLAND_SPRING } from "@/lib/motion";
 
 /** Letters stagger in after the kicker; copy below follows. */
@@ -101,6 +102,7 @@ export function Hero() {
   const words = hero.wordmark.split(" ");
   const letterCount = words.join("").length;
   const taglineIndex = LETTER_BASE_INDEX + letterCount + 1;
+  const terminalIndex = taglineIndex + hero.ctas.length + 2;
 
   let letterIndex = 0;
 
@@ -109,98 +111,117 @@ export function Hero() {
       id="hero"
       initial="hidden"
       animate="visible"
-      className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 sm:px-8"
+      className="relative flex min-h-[92svh] flex-col justify-center overflow-hidden px-6 sm:px-8"
     >
       <div
         aria-hidden="true"
         className="hero-glow pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[80vh] w-[120vw] -translate-x-1/2 -translate-y-1/2 rounded-full"
       />
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col items-center text-center">
-        {/* Kicker */}
-        <motion.p
-          variants={fadeUp}
-          custom={KICKER_INDEX}
-          className="font-mono text-xs uppercase tracking-[0.25em] text-muted sm:text-sm"
-        >
-          {hero.kicker}
-        </motion.p>
+      <div className="mx-auto grid w-full max-w-6xl gap-10 py-20 lg:grid-cols-12 lg:items-center lg:gap-10 lg:py-0">
+        {/* Left: identity + copy */}
+        <div className="flex flex-col lg:col-span-7">
+          {/* Kicker */}
+          <motion.p
+            variants={fadeUp}
+            custom={KICKER_INDEX}
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-xs uppercase tracking-[0.25em] text-muted sm:text-sm"
+          >
+            <span
+              aria-hidden="true"
+              className="size-1.5 shrink-0 rounded-full bg-[var(--accent-2)] animate-pulse"
+            />
+            {hero.kicker}
+          </motion.p>
 
-        {/* Wordmark */}
-        <h1 className="mt-6 font-sans text-[17vw] font-extrabold uppercase leading-[0.85] tracking-[-0.06em] text-foreground sm:text-[15vw]">
-          <span className="sr-only">S Sai Kumar</span>
-          <span aria-hidden="true">
-            {words.map((word, wordIndex) => {
-              const isOutlined = wordIndex > 0;
+          {/* Wordmark */}
+          <h1 className="font-display mt-6 text-6xl font-extrabold tracking-[-0.03em] leading-[0.9] text-foreground sm:text-7xl lg:text-8xl">
+            <span className="sr-only">S Sai Kumar</span>
+            <span aria-hidden="true">
+              {words.map((word, wordIndex) => {
+                const isGradient = wordIndex > 0;
+                return (
+                  <span
+                    key={word}
+                    className={`block ${isGradient ? "grad-text grad-text-pan" : ""}`}
+                  >
+                    {word.split("").map((letter, i) => {
+                      const index = LETTER_BASE_INDEX + letterIndex;
+                      letterIndex += 1;
+                      return (
+                        <motion.span
+                          key={`${word}-${i}`}
+                          variants={fadeUp}
+                          custom={index}
+                          className="inline-block"
+                        >
+                          {letter}
+                        </motion.span>
+                      );
+                    })}
+                  </span>
+                );
+              })}
+            </span>
+          </h1>
+
+          {/* Tagline */}
+          <motion.p
+            variants={fadeUp}
+            custom={taglineIndex}
+            className="mt-8 max-w-xl text-lg text-muted text-balance sm:text-xl"
+          >
+            {renderAccent(hero.tagline)}
+          </motion.p>
+
+          {/* CTAs */}
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            {hero.ctas.map((cta, i) => {
+              const isPrimary = i === 0;
+              const isExternalDoc = !cta.href.startsWith("#");
               return (
-                <span
-                  key={word}
-                  className={`block ${isOutlined ? "hero-outline" : ""}`}
-                >
-                  {word.split("").map((letter, i) => {
-                    const index = LETTER_BASE_INDEX + letterIndex;
-                    letterIndex += 1;
-                    return (
-                      <motion.span
-                        key={`${word}-${i}`}
-                        variants={fadeUp}
-                        custom={index}
-                        className="inline-block"
-                      >
-                        {letter}
-                      </motion.span>
-                    );
-                  })}
-                </span>
+                <MagneticCta
+                  key={cta.label}
+                  cta={cta}
+                  index={taglineIndex + 1 + i}
+                  isExternalDoc={isExternalDoc}
+                  className={
+                    isPrimary
+                      ? "glow-pulse grad rounded-full px-7 py-3 text-sm font-semibold text-background transition-transform duration-300 ease-[var(--ease-signature)] hover:scale-[1.03]"
+                      : "rounded-full border border-white/10 bg-white/5 px-7 py-3 text-sm font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-signature)] hover:border-white/25 hover:bg-white/10"
+                  }
+                />
               );
             })}
-          </span>
-        </h1>
+          </div>
 
-        {/* Tagline */}
-        <motion.p
-          variants={fadeUp}
-          custom={taglineIndex}
-          className="mt-8 max-w-xl text-lg text-muted text-balance sm:text-xl"
-        >
-          {renderAccent(hero.tagline)}
-        </motion.p>
-
-        {/* CTAs */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          {hero.ctas.map((cta, i) => {
-            const isPrimary = i === 0;
-            const isExternalDoc = !cta.href.startsWith("#");
-            return (
-              <MagneticCta
-                key={cta.label}
-                cta={cta}
-                index={taglineIndex + 1 + i}
-                isExternalDoc={isExternalDoc}
-                className={
-                  isPrimary
-                    ? "rounded-full bg-accent px-7 py-3 text-sm font-semibold text-background transition-colors duration-300 ease-[var(--ease-signature)] hover:bg-accent/85"
-                    : "rounded-full border border-accent/30 px-7 py-3 text-sm font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-signature)] hover:border-accent/60"
-                }
-              />
-            );
-          })}
+          {/* Metadata line */}
+          <motion.p
+            variants={fadeUp}
+            custom={taglineIndex + hero.ctas.length + 1}
+            className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-muted"
+          >
+            based in india · open to internships 2026 · s.sai08019@gmail.com
+          </motion.p>
         </div>
 
-        {/* Metadata line */}
-        <motion.p
+        {/* Right: the live terminal — hero's co-star */}
+        <motion.div
           variants={fadeUp}
-          custom={taglineIndex + hero.ctas.length + 1}
-          className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-muted"
+          custom={terminalIndex}
+          className="flex flex-col lg:col-span-5"
         >
-          based in india · open to internships 2026 · s.sai08019@gmail.com
-        </motion.p>
+          <p className="mb-3 font-mono text-xs text-accent-2">
+            <span aria-hidden="true">&#9656; </span>ask the agent anything
+          </p>
+          <TerminalCard className="min-h-[340px] lg:min-h-[420px]" />
+        </motion.div>
       </div>
 
       {/* Scroll hint */}
       <motion.div
         variants={fadeUp}
-        custom={taglineIndex + hero.ctas.length + 3}
+        custom={terminalIndex + 1}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         aria-hidden="true"
       >
