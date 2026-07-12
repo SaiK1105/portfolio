@@ -1,27 +1,30 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { site } from "@/lib/site";
-import { Orbs } from "@/components/ui/Orbs";
-import { CursorGlow } from "@/components/ui/CursorGlow";
+import { MenuBar } from "@/components/os/MenuBar";
+import { BootSequence } from "@/components/os/BootSequence";
+import { Dock } from "@/components/os/Dock";
+import { StatusBar } from "@/components/os/StatusBar";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space",
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
   weight: ["500", "700"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
+/**
+ * Applies a saved theme choice to <html> before hydration so reloading
+ * on a light-mode preference never flashes dark first. Mirrors the
+ * `sk_os_theme` localStorage key MenuBar reads/writes.
+ */
+const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem('sk_os_theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -74,20 +77,23 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
+      data-theme="dark"
+      // THEME_INIT_SCRIPT mutates data-theme before hydration for saved
+      // light-theme users; suppress the resulting attribute mismatch.
+      suppressHydrationWarning
+      className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-bg text-text">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
-        <Orbs />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <BootSequence />
+        <MenuBar />
         {children}
-        <div
-          aria-hidden="true"
-          className="grain-overlay pointer-events-none fixed inset-0 z-[60]"
-        />
-        <CursorGlow />
+        <StatusBar />
+        <Dock />
       </body>
     </html>
   );

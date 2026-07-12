@@ -5,6 +5,7 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 import { about, hero, projects, skills } from "@/lib/content";
 import { site } from "@/lib/site";
 import { VIEWPORT_ONCE } from "@/lib/motion";
+import { Window } from "@/components/os/Window";
 
 const CHAR_DELAY_MS = 30;
 const LINE_PAUSE_MS = 350;
@@ -64,12 +65,25 @@ function replaceThinking(history: Entry[], replacement: Entry): Entry[] {
   return [...history.filter((e) => e.kind !== "thinking"), replacement];
 }
 
-/** Blinking block cursor — hard on/off, no fade, like a real terminal caret. */
-function Cursor() {
+/**
+ * Blinking block cursor — hard on/off, no fade, like a real terminal caret.
+ * Framer Motion's WAAPI-driven loop isn't reachable by the global CSS
+ * prefers-reduced-motion block, so it renders as a static (non-animating)
+ * caret when `reducedMotion` is set instead.
+ */
+function Cursor({ reducedMotion }: { reducedMotion: boolean }) {
+  if (reducedMotion) {
+    return (
+      <span
+        aria-hidden="true"
+        className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-amber align-middle"
+      />
+    );
+  }
   return (
     <motion.span
       aria-hidden="true"
-      className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-accent align-middle"
+      className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-amber align-middle"
       animate={{ opacity: [1, 1, 0, 0] }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear", times: [0, 0.5, 0.5, 1] }}
     />
@@ -77,11 +91,12 @@ function Cursor() {
 }
 
 /**
- * TerminalCard — the site's signature element. A minimal terminal window
- * that types out `about.terminalLines` one character at a time once it
- * scrolls into view, then hands control to the visitor: local commands
- * resolve instantly; anything else is forwarded to /api/chat.
- * Respects prefers-reduced-motion by rendering the intro instantly.
+ * TerminalCard — the site's signature element, reskinned as an OS window:
+ * "sai@agent: ~/terminal — zsh". Types out `about.terminalLines` one
+ * character at a time once it scrolls into view, then hands control to the
+ * visitor: local commands resolve instantly; anything else is forwarded to
+ * /api/chat. Respects prefers-reduced-motion by rendering the intro
+ * instantly and killing the blinking caret.
  */
 export function TerminalCard({ className = "" }: { className?: string } = {}) {
   const ref = useRef<HTMLDivElement>(null);
@@ -89,12 +104,13 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isInView = useInView(ref, { once: VIEWPORT_ONCE.once, margin: VIEWPORT_ONCE.margin });
   const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = Boolean(prefersReducedMotion);
 
   const lines = about.terminalLines;
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
 
-  const skipTyping = Boolean(prefersReducedMotion);
+  const skipTyping = reducedMotion;
   const introDone = skipTyping || lineIndex >= lines.length;
 
   const [history, setHistory] = useState<Entry[]>([]);
@@ -263,122 +279,121 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
   }
 
   return (
-    <div
-      ref={ref}
-      className={`card-surface flex flex-col overflow-hidden rounded-2xl ${className}`}
-      onClick={focusInput}
-    >
-      {/* Header row */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-3">
-        <span className="flex gap-1.5" aria-hidden="true">
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-        </span>
-        <span className="ml-2 font-mono text-xs text-muted">sai@agent — zsh</span>
-      </div>
-
-      {/* Body */}
-      <div className="flex min-h-0 flex-1 flex-col px-5 py-6 font-mono text-sm leading-relaxed">
-        {/* Accessible full-text fallback; visual typing below is decorative. */}
-        <p className="sr-only">{lines.join(". ")}</p>
-
-        <div aria-hidden="true" className="shrink-0">
-          {lines.map((line, i) => {
-            const isLast = i === lines.length - 1;
-            const colorClass = isLast ? "text-status-present" : "text-accent/90";
-
-            if (skipTyping || i < lineIndex) {
-              return (
-                <div key={line} className={colorClass}>
-                  {line}
-                </div>
-              );
-            }
-
-            if (i === lineIndex) {
-              return (
-                <div key={line} className={colorClass}>
-                  {line.slice(0, charIndex)}
-                  <Cursor />
-                </div>
-              );
-            }
-
-            return null;
-          })}
-        </div>
-
-        {/*
-          The scrollback + prompt row mounts immediately (not gated on
-          introDone) so visitors see from second one that this terminal
-          takes input — it's just dimmed and disabled until the intro
-          finishes typing.
-        */}
+    <div ref={ref}>
+      <Window
+        title="sai@agent: ~/terminal — zsh"
+        aria-label="Live agent terminal"
+        className={className}
+      >
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- clicking anywhere in the terminal body focuses the real input below; the input itself carries the interactive semantics. */}
         <div
-          ref={scrollRef}
-          className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain"
+          onClick={focusInput}
+          className="flex flex-col px-5 pb-5 pt-[18px]"
         >
-          {introDone && (
-            <>
-              {dayLine && <div className="text-muted">{dayLine}</div>}
-              <div className="text-accent/90">{HINT_LINE}</div>
+          {/* Accessible full-text fallback; visual typing below is decorative. */}
+          <p className="visually-hidden">{lines.join(". ")}</p>
 
-              {history.map((entry, i) => {
-                if (entry.kind === "thinking") {
+          <div aria-hidden="true" className="shrink-0">
+            {lines.map((line, i) => {
+              const isLast = i === lines.length - 1;
+              const colorClass = isLast ? "text-green" : "text-green/90";
+
+              if (skipTyping || i < lineIndex) {
+                return (
+                  <div key={line} className={colorClass}>
+                    {line}
+                  </div>
+                );
+              }
+
+              if (i === lineIndex) {
+                return (
+                  <div key={line} className={colorClass}>
+                    {line.slice(0, charIndex)}
+                    <Cursor reducedMotion={reducedMotion} />
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+          </div>
+
+          {/*
+            The scrollback + prompt row mounts immediately (not gated on
+            introDone) so visitors see from second one that this terminal
+            takes input — it's just dimmed and disabled until the intro
+            finishes typing. Capped height keeps the window a predictable
+            size no matter how long the conversation runs.
+          */}
+          <div
+            ref={scrollRef}
+            className="mt-3 max-h-[210px] space-y-1.5 overflow-y-auto overscroll-contain sm:max-h-[260px]"
+          >
+            {introDone && (
+              <>
+                {dayLine && <div className="text-muted">{dayLine}</div>}
+                <div className="text-green/90">{HINT_LINE}</div>
+
+                {history.map((entry, i) => {
+                  if (entry.kind === "thinking") {
+                    return (
+                      <div key={i} className="text-muted">
+                        thinking<span className="animate-pulse">…</span>
+                      </div>
+                    );
+                  }
+                  if (entry.kind === "echo") {
+                    return (
+                      <div key={i} className="text-text">
+                        <span className="mr-1.5 text-green">{PROMPT}</span>
+                        {entry.text}
+                      </div>
+                    );
+                  }
                   return (
-                    <div key={i} className="text-muted">
-                      thinking<span className="animate-pulse">…</span>
-                    </div>
-                  );
-                }
-                if (entry.kind === "echo") {
-                  return (
-                    <div key={i} className="text-accent/90">
-                      <span className="text-accent-1">{PROMPT}</span>
+                    <div
+                      key={i}
+                      className={`whitespace-pre-wrap ${
+                        entry.tone === "muted" ? "text-muted" : "text-green/90"
+                      }`}
+                    >
                       {entry.text}
                     </div>
                   );
-                }
-                return (
-                  <div
-                    key={i}
-                    className={`whitespace-pre-wrap ${entry.tone === "muted" ? "text-muted" : "text-accent/90"}`}
-                  >
-                    {entry.text}
-                  </div>
-                );
-              })}
-            </>
-          )}
+                })}
+              </>
+            )}
 
-          <form
-            onSubmit={handleSubmit}
-            className={`flex items-baseline text-accent/90 transition-opacity duration-300 ease-[var(--ease-signature)] ${
-              introDone ? "opacity-100" : "opacity-50"
-            }`}
-          >
-            <span className="shrink-0 text-accent-1">{PROMPT}</span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
-              onFocus={() => setInputFocused(true)}
-              onBlur={() => setInputFocused(false)}
-              disabled={isLoading || !introDone}
-              maxLength={MAX_INPUT_LENGTH}
-              aria-label="terminal input"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              className="min-w-0 flex-1 border-0 bg-transparent font-mono text-accent/90 caret-accent outline-none"
-            />
-            {!input && !inputFocused && <Cursor />}
-          </form>
+            <form
+              onSubmit={handleSubmit}
+              className={`flex items-baseline transition-opacity duration-300 ease-[var(--ease-signature)] ${
+                introDone ? "opacity-100" : "opacity-50"
+              }`}
+            >
+              <span className="mr-1.5 shrink-0 text-green">{PROMPT}</span>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                disabled={isLoading || !introDone}
+                maxLength={MAX_INPUT_LENGTH}
+                aria-label="terminal input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="ask the agent something…"
+                className="min-w-0 flex-1 border-0 bg-transparent text-text caret-amber outline-none placeholder:text-muted/70"
+              />
+              {!input && !inputFocused && <Cursor reducedMotion={reducedMotion} />}
+            </form>
+          </div>
         </div>
-      </div>
+      </Window>
     </div>
   );
 }

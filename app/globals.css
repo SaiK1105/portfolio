@@ -1,58 +1,108 @@
 @import "tailwindcss";
 
 /*
- * Design tokens — vibrant gradient modern system (AI-startup aesthetic).
- * Violet -> cyan -> pink gradient accents over a deep-space navy base,
- * glass surfaces, and soft glow. Variable NAMES are kept stable where
- * they existed before so other components keep working unmodified.
+ * ============================================================
+ * PID 1 — Agent OS design tokens
+ * ============================================================
+ * The portfolio renders as a living agent operating system: menu bar,
+ * boot sequence, window chrome on every section, a dock, and
+ * htop/systemd/cal.sh-style diagnostic surfaces. FLAT, hairline-bordered
+ * panels — no glassmorphism, no gradients, no drifting orbs.
+ *
+ * Source of truth: the approved os.html mockup. Dark is the default
+ * theme; light is opt-in via data-theme="light" on <html> (toggled and
+ * persisted to localStorage by MenuBar).
  */
+
 :root {
-  --background: #060614;
-  --surface-1: #0b0b1e;
-  --surface-2: #131332;
-  --foreground: #ededf4;
-  --muted: #9ca0b0;
+  --bg: #0a0a0c;
+  --panel: #141416;
+  --border: #2a2a2e;
+  --menubar: #0f0f11;
+  --dock: #141416;
+  --text: #f4f3ef;
+  --muted: #8b8b92;
+  --amber: #ffb020;
+  --green: #33ff9c;
+  --red: #ff5c5c;
 
-  --accent-1: #8b5cf6; /* violet */
-  --accent-2: #22d3ee; /* cyan */
-  --accent-3: #f472b6; /* pink */
-  /* Legacy alias — all existing text-accent/bg-accent usages go cyan. */
-  --accent: var(--accent-2);
+  --hm-1: #1a2e22;
+  --hm-2: #16532e;
+  --hm-3: #1f9c52;
+  --hm-4: #33ff9c;
 
-  --status-present: #34d399;
-  --status-past: #6b7280;
+  --shadow: 0 20px 60px rgb(0 0 0 / 0.55);
 
-  /* Signature easing — use for ALL transitions. */
+  /* Section-reveal easing — unchanged across the rebuild. */
   --ease-signature: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Dock / hover-lift spring. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f3ef;
+  --panel: #ffffff;
+  --border: #dddcd5;
+  --menubar: #ffffff;
+  --dock: #ffffff;
+  --text: #111113;
+  --muted: #66666d;
+  --amber: #b8710a;
+  --green: #0e9f5c;
+  --red: #c43b3b;
+
+  --hm-1: #dcefe1;
+  --hm-2: #a9dfc0;
+  --hm-3: #57c285;
+  --hm-4: #0e9f5c;
+
+  --shadow: 0 20px 50px rgb(20 20 20 / 0.1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-surface-1: var(--surface-1);
-  --color-surface-2: var(--surface-2);
-  --color-foreground: var(--foreground);
-  --color-accent: var(--accent);
-  --color-accent-1: var(--accent-1);
-  --color-accent-2: var(--accent-2);
-  --color-accent-3: var(--accent-3);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-border: var(--border);
+  --color-text: var(--text);
   --color-muted: var(--muted);
-  --color-status-present: var(--status-present);
-  --color-status-past: var(--status-past);
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-space);
-  --font-mono: var(--font-geist-mono);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+  --color-red: var(--red);
+
+  --color-hm-1: var(--hm-1);
+  --color-hm-2: var(--hm-2);
+  --color-hm-3: var(--hm-3);
+  --color-hm-4: var(--hm-4);
+
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+
   --ease-signature: var(--ease-signature);
 }
 
+/* ============================================================
+ * Base / reset
+ * ============================================================ */
+
 html {
   scroll-behavior: smooth;
-  background: var(--background);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono), "SFMono-Regular", Consolas, monospace;
+  line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Subtle dot-grid backdrop, ~6% of the current text color. */
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--text) 6%, transparent) 1px,
+    transparent 1.4px
+  );
+  background-size: 8px 8px;
 }
 
 h1,
@@ -63,199 +113,484 @@ h3,
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent-1) 30%, transparent);
+  background: var(--amber);
+  color: var(--bg);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 2px solid var(--amber);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* Gradient fill for solid surfaces (CTAs, dots, etc). */
-.grad {
-  background-image: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* Gradient text for {fragment} accents in headings/copy. */
-.grad-text {
-  background-image: linear-gradient(
-    100deg,
-    var(--accent-1) 0%,
-    var(--accent-2) 60%,
-    var(--accent-3) 120%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-size: 200% 100%;
+/* Keep anchor targets clear of the sticky menu bar. */
+section[id],
+article[id],
+main[id] {
+  scroll-margin-top: 48px;
 }
 
-/* Kept as an alias so pre-existing markup (owned by other agents) that
-   still references .accent-serif renders the new gradient-text voice
-   instead of a broken/missing class. See AGENTS notes for callers. */
-.accent-serif {
-  background-image: linear-gradient(
-    100deg,
-    var(--accent-1) 0%,
-    var(--accent-2) 60%,
-    var(--accent-3) 120%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-size: 200% 100%;
-  font-style: normal;
-  font-weight: 600;
+/* ============================================================
+ * Window chrome — the base surface for every OS panel
+ * ============================================================ */
+
+.window {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-.grad-text-pan {
-  animation: gradient-pan 8s linear infinite alternate;
+.window-titlebar {
+  height: 34px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--panel) 92%, black 8%);
+  border-bottom: 1px solid var(--border);
 }
 
-@keyframes gradient-pan {
-  to {
-    background-position: 100% 0;
-  }
+:root[data-theme="light"] .window-titlebar {
+  background: color-mix(in srgb, var(--panel) 96%, black 4%);
 }
 
-/* Card surface recipe — heavy frosted glass over the gradient-orb
-   backdrop: translucent fill + strong blur so the orbs' color bleeds
-   through, a specular top edge, and a diagonal sheen. */
-.card-surface {
-  position: relative;
-  /* Establishes a local stacking context so the cursor-shine ::before
-     below (z-index: -1) stays contained under this card's own content
-     instead of escaping to compete with unrelated page layers. */
-  isolation: isolate;
-  background: linear-gradient(
-    160deg,
-    rgb(255 255 255 / 0.09),
-    rgb(255 255 255 / 0.035) 45%,
-    rgb(255 255 255 / 0.06)
-  );
-  backdrop-filter: blur(28px) saturate(1.4);
-  -webkit-backdrop-filter: blur(28px) saturate(1.4);
-  border: 1px solid rgb(255 255 255 / 0.14);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    inset 0 -1px 0 rgb(255 255 255 / 0.04),
-    0 8px 40px rgb(0 0 0 / 0.45);
+.window-dots,
+.window-dots-spacer {
+  justify-self: start;
+}
+
+.window-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.window-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.window-dot--amber {
+  background: var(--amber);
+}
+
+.window-dot--green {
+  background: var(--green);
+}
+
+.window-dot--red {
+  background: var(--red);
+}
+
+.window-dots-spacer {
+  width: 45px;
+}
+
+.window-title {
+  justify-self: center;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-titlebar-spacer {
+  justify-self: end;
+}
+
+.window-body {
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+/* Opt-in padded-prose recipe for simple window bodies. Windows built
+   from dividers (htop rows, log lines, notebook cells, mailto rows, …)
+   skip this and lay out their own flush-edge rows instead. */
+.window-pad {
+  padding: 20px 22px 24px;
+}
+
+/* ============================================================
+ * Generic OS button — CTA links, boot-screen skip button, etc.
+ * ============================================================ */
+
+.os-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
   transition:
-    box-shadow 0.4s var(--ease-signature),
-    border-color 0.4s var(--ease-signature);
+    border-color 150ms ease,
+    transform 150ms var(--ease-spring),
+    color 150ms ease;
 }
 
-.card-surface:hover {
-  border-color: color-mix(in srgb, var(--accent-1) 45%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    inset 0 -1px 0 rgb(255 255 255 / 0.04),
-    0 8px 40px rgb(0 0 0 / 0.45),
-    0 0 48px color-mix(in srgb, var(--accent-1) 18%, transparent);
+.os-btn:hover,
+.os-btn:focus-visible {
+  border-color: var(--amber);
+  color: var(--amber);
+  transform: translateY(-2px);
 }
 
-/* Depth bands lift the surrounding sections off the void; cards inside
-   them step up one more level so they still read as raised. */
-.band {
-  background: rgb(255 255 255 / 0.02);
+/* ============================================================
+ * Menu bar
+ * ============================================================ */
+
+.menubar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--menubar);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
-.band .card-surface {
-  background: rgb(255 255 255 / 0.05);
+.menubar-left,
+.menubar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
-/* Hover-only pulse for the primary CTA. */
-.glow-pulse:hover {
-  animation: glow-pulse 2.4s ease-in-out infinite;
+.menubar-glyph {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  flex-shrink: 0;
 }
 
-@keyframes glow-pulse {
-  0%,
+.menubar-nav {
+  display: flex;
+  gap: 16px;
+}
+
+.menubar-nav a {
+  padding: 4px 2px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid transparent;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.menubar-nav a:hover,
+.menubar-nav a:focus-visible {
+  color: var(--text);
+  border-color: var(--amber);
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent);
+  animation: menubar-pulse 1.8s ease-out infinite;
+}
+
+@keyframes menubar-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-1) 35%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 32px 6px color-mix(in srgb, var(--accent-1) 35%, transparent);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
-/* Site-wide film-grain overlay — pure CSS, no JS, no layout impact. */
-.grain-overlay {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.02;
-  mix-blend-mode: overlay;
+.menubar-clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
-/* Hero wordmark ambient glow — violet tint. */
-.hero-glow {
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--accent-1) 10%, transparent),
-    transparent 65%
-  );
+.theme-toggle {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
 }
 
-/* Ambient background orbs — see components/ui/Orbs.tsx. */
-.orb {
+.theme-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--amber);
+  color: var(--bg);
+  font-size: 8px;
+  line-height: 1;
+  transition: transform 200ms var(--ease-spring);
+}
+
+:root[data-theme="light"] .theme-toggle-knob {
+  transform: translateX(20px);
+}
+
+@media (max-width: 900px) {
+  .menubar-nav {
+    display: none;
+  }
+}
+
+/* ============================================================
+ * Boot sequence overlay
+ * ============================================================ */
+
+.boot-screen {
   position: fixed;
-  border-radius: 9999px;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8vh 6vw;
+  background: #0a0a0c;
+  color: #c9c9cf;
+  font-family: var(--font-mono), "SFMono-Regular", Consolas, monospace;
+  cursor: pointer;
+  transition: opacity 150ms linear;
+}
+
+.boot-screen--leaving {
+  opacity: 0;
   pointer-events: none;
-  z-index: -10;
 }
 
-.orb-violet {
-  width: 52vw;
-  height: 52vw;
-  left: -10vw;
-  top: -10vw;
-  background: var(--accent-1);
-  opacity: 0.38;
-  filter: blur(100px);
-  animation: orb-drift-a 36s ease-in-out infinite alternate;
+.boot-log {
+  max-width: 62ch;
+  margin: 0;
+  font-size: clamp(12px, 1.6vw, 16px);
+  line-height: 1.9;
+  white-space: pre-wrap;
 }
 
-.orb-cyan {
-  width: 46vw;
-  height: 46vw;
-  right: -10vw;
-  bottom: -10vw;
-  background: var(--accent-2);
-  opacity: 0.3;
-  filter: blur(100px);
-  animation: orb-drift-b 32s ease-in-out infinite alternate;
+.boot-log .ok {
+  color: var(--green);
 }
 
-/* Third orb: faint pink drifting through the mid-page so glass cards
-   always have color behind them, not just at the corners. */
-.orb-pink {
-  width: 34vw;
-  height: 34vw;
-  left: 40vw;
-  top: 45vh;
-  background: var(--accent-3);
-  opacity: 0.16;
-  filter: blur(110px);
-  animation: orb-drift-a 44s ease-in-out infinite alternate-reverse;
+.boot-hint {
+  max-width: 62ch;
+  margin: 1.4em 0 0;
+  font-size: clamp(12px, 1.6vw, 16px);
+  color: #7c7c82;
 }
 
-@keyframes orb-drift-a {
-  from {
-    transform: translate(0, 0);
-  }
-  to {
-    transform: translate(6vw, 8vw);
+.boot-hint::after {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 16px;
+  margin-left: 4px;
+  background: var(--amber);
+  vertical-align: -3px;
+  animation: boot-blink 600ms steps(1) infinite;
+}
+
+.boot-skip {
+  position: absolute;
+  top: 6vh;
+  right: 6vw;
+}
+
+@keyframes boot-blink {
+  50% {
+    opacity: 0;
   }
 }
 
-@keyframes orb-drift-b {
-  from {
-    transform: translate(0, 0);
+/* ============================================================
+ * Dock
+ * ============================================================ */
+
+.dock-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  z-index: 150;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dock {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--dock);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+
+.dock-icon {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--panel) 85%, var(--bg) 15%);
+  transition:
+    transform 180ms var(--ease-spring),
+    border-color 150ms ease;
+}
+
+.dock-icon:hover,
+.dock-icon:focus-visible {
+  transform: translateY(-8px) scale(1.15);
+  border-color: var(--amber);
+  z-index: 2;
+}
+
+.dock-icon--terminal {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.dock-glyph {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dock-running-dot {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green);
+  transform: translateX(-50%);
+}
+
+.dock-label {
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--menubar);
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 120ms ease;
+}
+
+.dock-icon:hover .dock-label,
+.dock-icon:focus-visible .dock-label {
+  opacity: 1;
+}
+
+@media (max-width: 560px) {
+  .dock {
+    gap: 6px;
+    padding: 6px 8px;
   }
-  to {
-    transform: translate(-6vw, -6vw);
+  .dock-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .dock-label {
+    display: none;
   }
 }
+
+/* ============================================================
+ * Status bar (footer)
+ * ============================================================ */
+
+.statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 2rem;
+  padding: 14px 6vw 86px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.statusbar-dot {
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+/* ============================================================
+ * Motion
+ * ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -264,47 +599,18 @@ h3,
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
-  .grad-text-pan,
-  .orb-violet,
-  .orb-cyan,
-  .orb-pink {
-    animation: none !important;
+  /* Belt-and-suspenders: BootSequence already renders nothing under
+     reduced motion, this just guards against any pre-hydration flash. */
+  .boot-screen {
+    display: none !important;
   }
-}
-
-/* Cursor-aware card shine — CursorGlow.tsx writes --mx/--my (percentage
-   position within the hovered .card-surface) on a rAF-throttled, document-
-   level delegated mousemove listener. This overlay just reads those vars;
-   it degrades gracefully to a centered highlight (50% 50%) if JS hasn't
-   run yet (SSR, hydration gap) or the user never moved the pointer.
-   z-index: -1 keeps it below the card's real (non-positioned, in-flow)
-   content within the stacking context .card-surface now isolates. */
-.card-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(
-    500px circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--accent-2) 10%, transparent),
-    transparent 40%
-  );
-  opacity: 0;
-  transition: opacity 0.4s var(--ease-signature);
-}
-
-.card-surface:hover::before {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card-surface::before {
-    transition: none;
+  .dock-icon:hover,
+  .dock-icon:focus-visible {
+    transform: none;
   }
 }
