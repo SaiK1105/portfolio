@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
 import { site } from "@/lib/site";
 import { Orbs } from "@/components/ui/Orbs";
+import { CursorGlow } from "@/components/ui/CursorGlow";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -86,6 +87,7 @@ export default function RootLayout({
           aria-hidden="true"
           className="grain-overlay pointer-events-none fixed inset-0 z-[60]"
         />
+        <CursorGlow />
       </body>
     </html>
   );

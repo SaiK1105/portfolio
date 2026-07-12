@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 import { fadeUp, VIEWPORT_ONCE } from "@/lib/motion";
 
@@ -17,6 +17,13 @@ type RevealProps = {
  * Viewport-triggered fade-up wrapper. `delay` is a stagger index, not
  * seconds. `id`/`aria-label` pass through to the underlying element, so
  * callers can anchor or label a Reveal directly without an extra wrapper.
+ *
+ * Framer Motion drives opacity/transform via the Web Animations API, not
+ * CSS `transition`/`animation` properties, so the global
+ * `prefers-reduced-motion` block in globals.css (which only zeroes CSS
+ * animation/transition durations) can't reach it. Guard explicitly here:
+ * when reduced motion is requested, mount straight into the "visible"
+ * variant so there's no hidden->visible transition to play at all.
  */
 export function Reveal({
   children,
@@ -25,13 +32,15 @@ export function Reveal({
   id,
   "aria-label": ariaLabel,
 }: RevealProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <motion.div
       id={id}
       aria-label={ariaLabel}
       className={className}
       variants={fadeUp}
-      initial="hidden"
+      initial={prefersReducedMotion ? "visible" : "hidden"}
       whileInView="visible"
       viewport={VIEWPORT_ONCE}
       custom={delay}

@@ -156,6 +156,35 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
         body: JSON.stringify({ messages: nextMessages }),
         signal: controller.signal,
       });
+      if (res.status === 429) {
+        let retryAfterSeconds: number | undefined;
+        try {
+          const data = (await res.json()) as { retryAfterSeconds?: number };
+          retryAfterSeconds = data.retryAfterSeconds;
+        } catch {
+          // malformed/empty body — fall back to the generic cooldown line below
+        }
+        const cooldown =
+          typeof retryAfterSeconds === "number" && retryAfterSeconds > 0
+            ? `catching my breath — try again in ${retryAfterSeconds}s`
+            : "catching my breath — try again in a few seconds";
+        setHistory((h) =>
+          replaceThinking(h, { kind: "output", text: cooldown, tone: "muted" }),
+        );
+        return;
+      }
+
+      if (res.status === 403) {
+        setHistory((h) =>
+          replaceThinking(h, {
+            kind: "output",
+            text: "connection blocked — refresh the page, or try 'help' for local commands",
+            tone: "muted",
+          }),
+        );
+        return;
+      }
+
       if (!res.ok) throw new Error(`status ${res.status}`);
       const data = (await res.json()) as { reply?: string; error?: string };
       if (typeof data.reply !== "string") throw new Error("malformed response");

@@ -124,6 +124,10 @@ h3,
    through, a specular top edge, and a diagonal sheen. */
 .card-surface {
   position: relative;
+  /* Establishes a local stacking context so the cursor-shine ::before
+     below (z-index: -1) stays contained under this card's own content
+     instead of escaping to compete with unrelated page layers. */
+  isolation: isolate;
   background: linear-gradient(
     160deg,
     rgb(255 255 255 / 0.09),
@@ -269,5 +273,38 @@ h3,
   .orb-cyan,
   .orb-pink {
     animation: none !important;
+  }
+}
+
+/* Cursor-aware card shine — CursorGlow.tsx writes --mx/--my (percentage
+   position within the hovered .card-surface) on a rAF-throttled, document-
+   level delegated mousemove listener. This overlay just reads those vars;
+   it degrades gracefully to a centered highlight (50% 50%) if JS hasn't
+   run yet (SSR, hydration gap) or the user never moved the pointer.
+   z-index: -1 keeps it below the card's real (non-positioned, in-flow)
+   content within the stacking context .card-surface now isolates. */
+.card-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    500px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent-2) 10%, transparent),
+    transparent 40%
+  );
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-signature);
+}
+
+.card-surface:hover::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-surface::before {
+    transition: none;
   }
 }

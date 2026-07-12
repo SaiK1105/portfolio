@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { about } from "@/lib/content";
 import { DURATION, EASE, staggerChildren, VIEWPORT_ONCE } from "@/lib/motion";
 
@@ -14,15 +14,21 @@ const word: Variants = {
  * ManifestoReveal — word-level scroll reveal for the about.manifesto copy,
  * extracted from the former standalone About section so it can sit inside
  * the bento grid's manifesto cell.
+ *
+ * Same reduced-motion caveat as Reveal: this is a WAAPI-driven
+ * whileInView animation, invisible to the global CSS reduced-motion
+ * block, so it's guarded explicitly — reduced motion mounts every word
+ * straight into "visible".
  */
 export function ManifestoReveal() {
+  const prefersReducedMotion = useReducedMotion();
   const words = about.manifesto.split(" ");
 
   return (
     <motion.p
       className="flex flex-wrap gap-x-[0.3em] gap-y-1 text-2xl font-light leading-snug text-foreground sm:text-3xl"
       variants={staggerChildren}
-      initial="hidden"
+      initial={prefersReducedMotion ? "visible" : "hidden"}
       whileInView="visible"
       viewport={VIEWPORT_ONCE}
     >

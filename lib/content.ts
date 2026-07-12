@@ -94,6 +94,9 @@ export const projects = {
         "Robust stance classification across meetings",
       ],
       tech: ["Python", "OpenCV", "LibROSA", "Transformers", "scikit-learn"],
+      links: [
+        { label: "Read the case study", href: "/work/vomp/", external: false },
+      ] satisfies ProjectLink[],
     },
     {
       number: "03",

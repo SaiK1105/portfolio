@@ -109,7 +109,13 @@ export function Hero() {
   return (
     <motion.header
       id="hero"
-      initial="hidden"
+      // All child motion.* elements below inherit this hidden/visible
+      // state via variant propagation (they only set `variants`, no own
+      // initial/animate). Framer Motion's WAAPI-driven fadeUp transition
+      // isn't reachable by the CSS reduced-motion block, so gate the
+      // whole entrance stagger here: reduced motion skips straight to
+      // "visible" with no hidden->visible transition to play.
+      initial={prefersReducedMotion ? "visible" : "hidden"}
       animate="visible"
       className="relative flex min-h-[92svh] flex-col justify-center overflow-hidden px-6 sm:px-8"
     >
