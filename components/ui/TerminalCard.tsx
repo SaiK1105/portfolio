@@ -34,6 +34,65 @@ type Entry =
   | { kind: "output"; text: string; tone?: "muted" }
   | { kind: "thinking" };
 
+// Mirrors the tool contract in functions/api/chat.ts. The server already
+// validates tool name + enum args before sending an action down, but we
+// re-validate here too (defense in depth) rather than trust the wire.
+type ToolAction = { tool: string; args: Record<string, unknown> };
+
+const SECTION_VALUES = new Set([
+  "home",
+  "projects",
+  "skills",
+  "github",
+  "education",
+  "contact",
+]);
+const PROJECT_VALUES = new Set(["argus-v", "vomp"]);
+
+/** Validate + describe an action as a subtle confirmation line, or null if it doesn't check out. */
+function describeAction(action: ToolAction): string | null {
+  switch (action.tool) {
+    case "navigate": {
+      const section = action.args.section;
+      if (typeof section !== "string" || !SECTION_VALUES.has(section)) return null;
+      return `→ scrolling to ${section}`;
+    }
+    case "open_case_study": {
+      const project = action.args.project;
+      if (typeof project !== "string" || !PROJECT_VALUES.has(project)) return null;
+      return `→ opening ${project} case study`;
+    }
+    case "open_resume":
+      return "→ opening resume";
+    default:
+      return null;
+  }
+}
+
+/** Run the browser side-effect for an already-validated action. */
+function executeAction(action: ToolAction, reducedMotion: boolean) {
+  switch (action.tool) {
+    case "navigate": {
+      const section = action.args.section as string;
+      document
+        .getElementById(section)
+        ?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+      return;
+    }
+    case "open_case_study": {
+      const project = action.args.project as string;
+      const slug = project === "vomp" ? "vomp" : "argus-v";
+      window.open(`/work/${slug}/`, "_self");
+      return;
+    }
+    case "open_resume":
+      window.open("/resume.pdf", "_blank");
+      return;
+    default:
+      return;
+  }
+}
+
 function helpLines(): string[] {
   return [
     "help      - list commands",
@@ -202,7 +261,11 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
       }
 
       if (!res.ok) throw new Error(`status ${res.status}`);
-      const data = (await res.json()) as { reply?: string; error?: string };
+      const data = (await res.json()) as {
+        reply?: string;
+        error?: string;
+        actions?: ToolAction[];
+      };
       if (typeof data.reply !== "string") throw new Error("malformed response");
 
       conversationRef.current = [
@@ -210,6 +273,18 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
         { role: "assistant" as const, content: data.reply },
       ].slice(-MAX_HISTORY_TURNS);
       setHistory((h) => replaceThinking(h, { kind: "output", text: data.reply as string }));
+
+      // Client-executed tools: print the reply first, then run each
+      // validated action (scroll / open case study / open resume) and
+      // echo a subtle confirmation line for it.
+      if (Array.isArray(data.actions)) {
+        for (const action of data.actions) {
+          const description = describeAction(action);
+          if (!description) continue;
+          pushEntries([{ kind: "output", text: description, tone: "muted" }]);
+          executeAction(action, reducedMotion);
+        }
+      }
     } catch {
       setHistory((h) =>
         replaceThinking(h, {
