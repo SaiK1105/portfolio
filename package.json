@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "prebuild": "bun run scripts/fetch-contributions.mjs"
+    "prebuild": "bun run scripts/fetch-contributions.mjs",
+    "postbuild": "bun run scripts/gen-csp-headers.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",

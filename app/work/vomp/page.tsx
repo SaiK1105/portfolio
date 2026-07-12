@@ -25,6 +25,21 @@ import {
  */
 const SECTION = "mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-24";
 
+const caseStudyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  name: hero.title,
+  description: caseMeta.description,
+  author: {
+    "@type": "Person",
+    name: "S Sai Kumar",
+    url: "https://saik.co.in",
+  },
+  keywords: hero.chips.join(", "),
+  url: `${site.url}/work/vomp/`,
+  datePublished: "2026",
+};
+
 export const metadata: Metadata = {
   title: caseMeta.title,
   description: caseMeta.description,
@@ -46,6 +61,10 @@ export const metadata: Metadata = {
 export default function VompCaseStudy() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(caseStudyJsonLd) }}
+      />
       <div className="mx-auto max-w-6xl px-6 pt-8 sm:px-8">
         <a
           href="/"

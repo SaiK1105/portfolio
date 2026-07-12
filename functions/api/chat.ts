@@ -83,7 +83,7 @@ const originAllowed = (request: Request): boolean => {
  */
 const checkRateLimit = async (
   request: Request,
-): Promise<{ allowed: boolean; retryAfterSeconds: number }> => {
+): Promise<{ allowed: boolean; retryAfterSeconds: number; remaining: number }> => {
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   // `caches.default` is a Cloudflare Workers extension not present in
   // lib.dom's CacheStorage typings, hence the cast.
@@ -111,7 +111,7 @@ const checkRateLimit = async (
   );
 
   if (count >= RATE_LIMIT_MAX) {
-    return { allowed: false, retryAfterSeconds };
+    return { allowed: false, retryAfterSeconds, remaining: 0 };
   }
 
   await cache.put(
@@ -123,7 +123,11 @@ const checkRateLimit = async (
     }),
   );
 
-  return { allowed: true, retryAfterSeconds };
+  return {
+    allowed: true,
+    retryAfterSeconds,
+    remaining: Math.max(0, RATE_LIMIT_MAX - (count + 1)),
+  };
 };
 
 // (c) Cheap pre-filter: reject visitor text that tries to inject fake
@@ -144,7 +148,7 @@ Facts (only source of truth — never invent beyond these):
 - S Sai Kumar, engineering student, B.Tech CS (AI & Data Science), SASTRA Deemed University, Thanjavur — expected 2027.
 - Focus: LLMs and Agentic AI. Skills: Python, C/C++, Java, JavaScript, React, Node.js, MERN, LangGraph, Redis, Git, Claude Code, ML/DL, Transformers, OpenCV.
 - Project A.R.G.U.S-V: multimodal video-intelligence system with RAG and LangGraph agents — streams YouTube video through parallel ASR, scene detection, and vision-embedding pipelines into a queryable knowledge base. Streaming ingestion enables natural-language querying ~13-20s after a video starts processing. LangGraph agent uses dual-LLM routing; a rule-based evaluator replacing an LLM critique loop cut ~28s per query. Runs on an 8-GPU DGX H200 with LanceDB vector store and Redis task queue. Case study at /work/argus-v.
-- Project Voice of Monetary Policy: classifies the Fed's stance (hawkish/dovish) from FOMC press-conference videos by fusing facial action units, audio prosody, and transcript semantics (OpenCV, LibROSA, Transformers, scikit-learn).
+- Project Voice of Monetary Policy: a replication of Gorodnichenko, Pham & Talavera (2023) classifying the Fed's stance (hawkish/dovish) by fusing vocal prosody (speech-emotion recognition, LibROSA) with BERT text sentiment across 792 FOMC segments; BERT F1 0.82; evaluated with bootstrap OLS (2000 reps) on 22 financial instruments. Two modalities — voice + text; a visual/facial branch is scoped future work, not built. Case study at /work/vomp.
 - Project OpenWell: full-stack mental-health support platform — PHQ-9/GAD-7 self-assessments, an AI support chatbot with contextual risk assessment, counsellor booking, and anonymous access, localized in English, Hindi, Kashmiri, and Dogri. Live at openwell.vercel.app, code at github.com/SaiK1105/OpenWell.
 - Certifications: DSA to Web Development (GeeksForGeeks), Cloud Computing (Coursera).
 - Contact: s.sai08019@gmail.com · github.com/SaiK1105 · linkedin.com/in/saik7337 · India. Open to internships (2026), research collabs.
@@ -176,6 +180,11 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         retryAfterSeconds: rateLimit.retryAfterSeconds,
       },
       429,
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "RateLimit-Limit": String(RATE_LIMIT_MAX),
+        "RateLimit-Remaining": "0",
+      },
     );
   }
 
@@ -217,14 +226,21 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       temperature: 0.7,
     });
 
-    return json({ reply: result.response ?? "…the agent stared blankly. try again." });
+    return json(
+      { reply: result.response ?? "…the agent stared blankly. try again." },
+      200,
+      {
+        "RateLimit-Limit": String(RATE_LIMIT_MAX),
+        "RateLimit-Remaining": String(rateLimit.remaining),
+      },
+    );
   } catch {
     return json({ error: "agent unavailable" }, 500);
   }
 };
 
-const json = (data: unknown, status = 200) =>
+const json = (data: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
   });

@@ -87,13 +87,13 @@ export const projects = {
       name: "Voice of Monetary Policy",
       title: "Multimodal analysis of FOMC meetings",
       description:
-        "Research project classifying the Federal Reserve's policy stance (hawkish/dovish) from press-conference videos by fusing facial action units, audio prosody, and transcript semantics.",
+        "Replication of Gorodnichenko, Pham & Talavera (2023): does the Fed's tone of voice move markets independently of its words? Fuses vocal prosody (speech-emotion recognition) with BERT text sentiment across 792 FOMC segments, evaluated with bootstrap OLS on 22 financial instruments.",
       highlights: [
-        "Three-modality fusion: computer vision, audio processing, and NLP",
-        "Feature-extraction pipelines feeding trained ML classifiers",
-        "Robust stance classification across meetings",
+        "Two-modality fusion: vocal prosody (speech emotion) + transcript semantics (BERT)",
+        "BERT hawkish/dovish classifier reaching F1 0.82",
+        "Bootstrap OLS (2000 replications, BCa intervals) across ~181 meetings",
       ],
-      tech: ["Python", "OpenCV", "LibROSA", "Transformers", "scikit-learn"],
+      tech: ["Python", "LibROSA", "BERT (Transformers)", "Bootstrap OLS", "pandas"],
       links: [
         { label: "Read the case study", href: "/work/vomp/", external: false },
       ] satisfies ProjectLink[],

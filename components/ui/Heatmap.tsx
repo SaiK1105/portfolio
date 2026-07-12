@@ -57,13 +57,13 @@ export function Heatmap() {
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div className="flex items-baseline gap-3">
-          <span className="grad-text text-5xl font-extrabold leading-none">
-            {contributions.total.lastYear}
-          </span>
-          <span className="font-mono text-xs text-muted">
-            contributions &middot; last year
-          </span>
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-muted">
+            activity
+          </p>
+          <p className="grad-text mt-1 text-xl font-semibold sm:text-2xl">
+            shipping in the open
+          </p>
         </div>
         <a
           href={site.github}
@@ -114,6 +114,10 @@ export function Heatmap() {
       </div>
       <p className="mt-2 font-mono text-xs text-muted sm:hidden" aria-hidden="true">
         scroll &rarr;
+      </p>
+      <p className="mt-4 text-xs text-muted">
+        {contributions.total.lastYear} public contributions &middot; private
+        work not shown
       </p>
     </>
   );

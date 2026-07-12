@@ -5,9 +5,20 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
+# __SCRIPT_HASHES__ is a placeholder replaced by scripts/gen-csp-headers.mjs
+# (postbuild) with sha256-<hash> entries for every inline <script> body
+# emitted by the static export (hydration bootstrap + JSON-LD). This file
+# is copied verbatim into out/_headers by `next build`; the gen script
+# rewrites the copy in out/, never this source file.
+#
+# style-src keeps 'unsafe-inline': Framer Motion and React set inline
+# style="..." attributes at runtime for animation. CSP has no hash
+# mechanism for style ATTRIBUTES (only <style> elements / linked
+# stylesheets), so hashing style-src is not viable without breaking
+# animation — this is a deliberate, scoped exception, not an oversight.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' __SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'
