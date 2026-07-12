@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
  * id="home" (hero), id="projects", id="skills", id="contact".
  */
 const NAV_LINKS = [
-  { label: "Portfolio", href: "#home" },
-  { label: "Projects", href: "#projects" },
-  { label: "Skills", href: "#skills" },
-  { label: "Contact", href: "#contact" },
+  { label: "Portfolio", href: "/#home" },
+  { label: "Projects", href: "/#projects" },
+  { label: "Skills", href: "/#skills" },
+  { label: "Contact", href: "/#contact" },
 ] as const;
 
 /** localStorage key — also read by the no-flash theme-init script in layout.tsx. */

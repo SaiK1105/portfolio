@@ -397,7 +397,7 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
           {/*
             The scrollback + prompt row mounts immediately (not gated on
             introDone) so visitors see from second one that this terminal
-            takes input — it's just dimmed and disabled until the intro
+            takes input — it's just dimmed (but keyboard-focusable) until the intro
             finishes typing. Capped height keeps the window a predictable
             size no matter how long the conversation runs.
           */}
@@ -454,7 +454,7 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
                 onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                disabled={isLoading || !introDone}
+                disabled={isLoading}
                 maxLength={MAX_INPUT_LENGTH}
                 aria-label="terminal input"
                 autoComplete="off"

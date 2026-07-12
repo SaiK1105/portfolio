@@ -47,11 +47,11 @@
   --dock: #ffffff;
   --text: #111113;
   --muted: #66666d;
-  --amber: #b8710a;
-  --green: #0e9f5c;
+  --amber: #8a5606;
+  --green: #0b7d48;
   --red: #c43b3b;
 
-  --hm-1: #dcefe1;
+  --hm-1: #b9e4c8;
   --hm-2: #a9dfc0;
   --hm-3: #57c285;
   --hm-4: #0e9f5c;
@@ -86,6 +86,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Anchored sections land below the sticky menubar. */
+  scroll-padding-top: 52px;
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
 }
@@ -358,10 +360,10 @@ main[id] {
   color: var(--muted);
 }
 
-.theme-toggle {
+.theme-toggle { /* WCAG 2.5.8: >=24px target */
   position: relative;
-  width: 40px;
-  height: 20px;
+  width: 44px;
+  height: 24px;
   flex-shrink: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -389,7 +391,7 @@ main[id] {
   transform: translateX(20px);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .menubar-nav {
     display: none;
   }
@@ -560,8 +562,8 @@ main[id] {
     padding: 6px 8px;
   }
   .dock-icon {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
   }
   .dock-label {
     display: none;
@@ -613,4 +615,22 @@ main[id] {
   .dock-icon:focus-visible {
     transform: none;
   }
+}
+
+/* The dock is fixed at the bottom (60px + 16px offset); reserve its
+   footprint so no content can be permanently trapped underneath it. */
+main {
+  padding-bottom: 104px;
+}
+
+/* Pre-hydration boot cover: the inline script in layout.tsx sets
+   data-booting on <html> before first paint when a boot will play, so
+   visitors never see the finished page flash before the overlay mounts.
+   BootSequence removes the attribute once its overlay is up (or skipped). */
+html[data-booting] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 900;
 }

@@ -16,11 +16,11 @@ type DockItem = {
  * (contributions/cal.sh panel), id="contact".
  */
 const DOCK_ITEMS: DockItem[] = [
-  { id: "terminal", label: "Terminal", glyph: ">_", href: "#home", running: true },
-  { id: "projects", label: "Projects", glyph: "PR", href: "#projects" },
-  { id: "skills", label: "Skills", glyph: "SK", href: "#skills" },
-  { id: "github", label: "GitHub", glyph: "GH", href: "#github" },
-  { id: "contact", label: "Contact", glyph: "@", href: "#contact" },
+  { id: "terminal", label: "Terminal", glyph: ">_", href: "/#home", running: true },
+  { id: "projects", label: "Projects", glyph: "PR", href: "/#projects" },
+  { id: "skills", label: "Skills", glyph: "SK", href: "/#skills" },
+  { id: "github", label: "GitHub", glyph: "GH", href: "/#github" },
+  { id: "contact", label: "Contact", glyph: "@", href: "/#contact" },
   { id: "mail", label: "Email", glyph: "✉", href: `mailto:${site.email}` },
 ];
 

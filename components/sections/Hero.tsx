@@ -7,7 +7,7 @@ import { TerminalCard } from "@/components/ui/TerminalCard";
 
 /**
  * Wordmark font-size token, scoped to the hero stage. The terminal's
- * overlap offset below is derived from the same `--wm` value (`* 0.42`)
+ * overlap offset below is derived from the same `--wm` value (`* 0.26`)
  * so the "slice" lands in the same spot on the wordmark at every
  * viewport width, exactly like the os.html mockup's `--wm`-relative
  * terminal offset.
@@ -64,7 +64,7 @@ export function Hero() {
             (Decorative "peek" windows were removed: at desktop widths they
             collided with the wordmark and read as clutter. The sliced
             wordmark + terminal is a cleaner, more confident composition.) */}
-        <div className="relative z-[5] lg:-mt-[calc(var(--wm)*0.42)] lg:ml-[clamp(0px,4vw,90px)]">
+        <div className="relative z-[5] lg:-mt-[calc(var(--wm)*0.26)] lg:ml-[clamp(0px,4vw,90px)]">
           <p className="mb-2 font-mono text-xs text-green lg:hidden">
             <span aria-hidden="true">&#9656; </span>ask the agent anything
           </p>

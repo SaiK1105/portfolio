@@ -26,6 +26,8 @@ const ibmPlexMono = IBM_Plex_Mono({
  */
 const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem('sk_os_theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}`;
 
+const BOOT_INIT_SCRIPT = `try{if(!sessionStorage.getItem('sk_os_booted')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.setAttribute('data-booting','1');setTimeout(function(){document.documentElement.removeAttribute('data-booting');},5000);}}catch(e){}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: site.title,
@@ -89,6 +91,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_INIT_SCRIPT }} />
         <BootSequence />
         <MenuBar />
         {children}

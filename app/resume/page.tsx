@@ -3,6 +3,7 @@ import { education, projects, skills } from "@/lib/content";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/resume/" },
   title: "Resume - S Sai Kumar",
   robots: { index: false },
 };

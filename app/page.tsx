@@ -55,7 +55,7 @@ export default function Home() {
 
       <section
         aria-label="Education and contact"
-        className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 sm:py-24"
+        className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 sm:py-20"
       >
         <GroupLabel>/WHOAMI</GroupLabel>
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">

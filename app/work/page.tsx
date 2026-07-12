@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { Window } from "@/components/os/Window";
 import { Reveal } from "@/components/ui/Reveal";
 import { site } from "@/lib/site";
-import { caseMeta as argusMeta, hero as argusHero } from "@/lib/case-argus";
-import { caseMeta as vompMeta, hero as vompHero } from "@/lib/case-vomp";
+import { hero as argusHero } from "@/lib/case-argus";
+import { hero as vompHero } from "@/lib/case-vomp";
 
 /**
  * /work — index of case studies, reskinned into the PID 1 — Agent OS
@@ -38,7 +38,7 @@ const cases = [
     title: argusHero.title,
     oneLiner:
       "A video intelligence system that answers questions about videos while they're still processing.",
-    meta: argusMeta.title.split(" — ")[0],
+    meta: "01 — flagship system",
   },
   {
     href: "/work/vomp/",
@@ -46,7 +46,7 @@ const cases = [
     title: vompHero.title,
     oneLiner:
       "Classifying the Fed's hawkish/dovish stance from vocal tone and text, fused and tested against real market moves.",
-    meta: vompMeta.title.split(" — ")[0],
+    meta: "02 — applied research",
   },
 ] as const;
 

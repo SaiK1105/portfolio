@@ -74,6 +74,7 @@ export function BootSequence() {
       } catch {
         /* ignore */
       }
+      document.documentElement.removeAttribute("data-booting");
       return;
     }
 
@@ -100,6 +101,9 @@ export function BootSequence() {
     window.addEventListener("pointerdown", finish);
 
     setPhase("booting");
+    // The full-screen overlay is mounted now — drop the pre-paint CSS
+    // cover (html[data-booting]) that hid the page until this moment.
+    document.documentElement.removeAttribute("data-booting");
     // Reset on (re)mount — dev StrictMode re-runs effects and would
     // otherwise append a duplicate set of boot lines.
     setLines([]);
