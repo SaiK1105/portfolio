@@ -9,6 +9,7 @@ export const site = {
   phone: "+91 7337354430",
   github: "https://github.com/SaiK1105",
   githubUser: "SaiK1105",
+  linkedin: "https://www.linkedin.com/in/saik7337",
   location: "India",
   // SaiK1105 currently has sparse public activity (~27 contributions/yr).
   // Flip to false to drop the GitHub section entirely.

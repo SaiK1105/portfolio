@@ -21,12 +21,12 @@ export function About() {
   const words = about.manifesto.split(" ");
 
   return (
-    <section id="about" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-32">
+    <section id="about" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-28">
       <SectionHeading kicker="01 - About" title="Systems that {reason and act}." />
 
-      <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
+      <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start lg:gap-16">
         <motion.p
-          className="flex flex-wrap gap-x-[0.3em] gap-y-1 text-2xl font-light leading-snug text-foreground sm:text-3xl"
+          className="flex flex-wrap gap-x-[0.3em] gap-y-1 text-2xl font-light leading-snug text-foreground sm:text-3xl lg:col-span-7"
           variants={staggerChildren}
           initial="hidden"
           whileInView="visible"
@@ -39,7 +39,14 @@ export function About() {
           ))}
         </motion.p>
 
-        <Reveal delay={1}>
+        <Reveal delay={1} className="relative h-full self-stretch lg:col-span-5">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute right-5 top-3.5 z-10 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-muted"
+          >
+            <span className="size-1.5 rounded-full bg-status-present" />
+            live
+          </span>
           <TerminalCard />
         </Reveal>
       </div>

@@ -54,9 +54,15 @@ export const skills = {
   ],
 } as const;
 
+export type ProjectLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+};
+
 export const projects = {
   heading: "Projects",
-  sub: "Selected work. Code available on request.",
+  sub: "Selected work. A.R.G.U.S-V code available on request.",
   items: [
     {
       number: "01",
@@ -64,13 +70,16 @@ export const projects = {
       name: "A.R.G.U.S-V",
       title: "Video intelligence framework for YouTube",
       description:
-        "End-to-end framework for intelligent analysis of YouTube content using LLMs and multimodal learning — ingestion, transcription, summarization, and semantic search that cuts manual review time.",
+        "Multimodal video-intelligence system with RAG and LangGraph agents — streams YouTube video through parallel ASR, scene detection, and vision-embedding pipelines into a queryable knowledge base.",
       highlights: [
-        "LangGraph-orchestrated agent workflows for the analysis pipeline",
-        "Redis caching for high-performance reuse of processed data",
-        "Semantic search over transcribed and summarized video content",
+        "Streaming ingestion unlocks natural-language querying ~13–20s after a video starts processing, instead of minutes",
+        "LangGraph agent with dual-LLM routing; replacing an LLM critique loop with rule-based evaluation cut ~28s per query",
+        "8-GPU pipeline on DGX H200: FastAPI ASR + vision microservices, Redis task queue, LanceDB vector store",
       ],
-      tech: ["Python", "LLMs", "LangGraph", "Redis"],
+      tech: ["Python", "LangGraph", "vLLM", "Whisper/Canary ASR", "Qwen3-VL", "LanceDB", "Redis", "FastAPI"],
+      links: [
+        { label: "Read the case study", href: "/work/argus-v/", external: false },
+      ] satisfies ProjectLink[],
     },
     {
       number: "02",
@@ -85,6 +94,24 @@ export const projects = {
         "Robust stance classification across meetings",
       ],
       tech: ["Python", "OpenCV", "LibROSA", "Transformers", "scikit-learn"],
+    },
+    {
+      number: "03",
+      kicker: "SHIPPED",
+      name: "OpenWell",
+      title: "Digital mental-health platform",
+      description:
+        "Full-stack mental-health support platform: PHQ-9/GAD-7 self-assessments, an AI support chatbot with contextual risk assessment, counsellor booking, and anonymous access — localized in English, Hindi, Kashmiri, and Dogri.",
+      highlights: [
+        "Supabase auth, database, realtime, and edge functions behind a React + TypeScript front end",
+        "Anonymous-mode design so users can seek help without an account",
+        "Four-language i18n including Kashmiri and Dogri",
+      ],
+      tech: ["TypeScript", "React", "Vite", "Tailwind", "shadcn/ui", "Supabase"],
+      links: [
+        { label: "Live demo", href: "https://openwell.vercel.app", external: true },
+        { label: "GitHub", href: "https://github.com/SaiK1105/OpenWell", external: true },
+      ] satisfies ProjectLink[],
     },
   ],
 } as const;

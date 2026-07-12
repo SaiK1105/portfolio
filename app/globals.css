@@ -72,6 +72,41 @@ body {
     0 4px 24px rgb(0 0 0 / 0.5);
 }
 
+/* Depth bands lift the surrounding sections off the void; cards inside
+   them step up one more level so they still read as raised. */
+.band .card-surface {
+  background: var(--surface-2);
+}
+
+/* Site-wide film-grain overlay — pure CSS, no JS, no layout impact. */
+.grain-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+/* Hero wordmark ambient glow. */
+.hero-glow {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--accent) 7%, transparent),
+    transparent 65%
+  );
+}
+
+/* "KUMAR" outline treatment in the hero split wordmark; solid fallback
+   for browsers without -webkit-text-stroke support. */
+.hero-outline {
+  color: var(--foreground);
+}
+
+@supports (-webkit-text-stroke: 1px black) {
+  .hero-outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--foreground);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

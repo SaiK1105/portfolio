@@ -15,14 +15,17 @@ export default function Home() {
       <IslandNav />
       <main className="flex flex-1 flex-col">
         <Hero />
-        <About />
+        <div className="band bg-surface-1 border-y border-white/5">
+          <About />
+          <Skills />
+        </div>
         <TraceDivider />
-        <Skills />
         <Projects />
         <TraceDivider />
-        <Github />
-        <Education />
-        <TraceDivider />
+        <div className="band bg-surface-1 border-y border-white/5">
+          <Github />
+          <Education />
+        </div>
         <Contact />
       </main>
       <Footer />

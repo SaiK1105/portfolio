@@ -34,44 +34,46 @@ export function TraceDivider() {
   const showPulse = isInView && !prefersReducedMotion;
 
   return (
-    <svg
-      ref={ref}
-      aria-hidden="true"
-      focusable="false"
-      viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`}
-      preserveAspectRatio="none"
-      className="block h-12 w-full"
-    >
-      <path
-        d={TRACE_PATH}
-        fill="none"
-        strokeWidth={1}
-        vectorEffect="non-scaling-stroke"
-        className="stroke-white/8"
-      />
-
-      {NODES.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={2} className="fill-accent/40" />
-      ))}
-
-      {!prefersReducedMotion && (
-        <motion.path
+    <div className="mx-auto max-w-6xl px-6 sm:px-8">
+      <svg
+        ref={ref}
+        aria-hidden="true"
+        focusable="false"
+        viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`}
+        preserveAspectRatio="none"
+        className="block h-12 w-full"
+      >
+        <path
           d={TRACE_PATH}
           fill="none"
-          strokeWidth={1.5}
-          strokeLinecap="round"
+          strokeWidth={1}
           vectorEffect="non-scaling-stroke"
-          className="stroke-accent"
-          pathLength={PULSE_LENGTH}
-          initial={{ pathOffset: -PULSE_LENGTH, opacity: 0 }}
-          animate={
-            showPulse
-              ? { pathOffset: 1, opacity: [0, 1, 1, 0] }
-              : { pathOffset: -PULSE_LENGTH, opacity: 0 }
-          }
-          transition={{ duration: PULSE_DURATION, ease: EASE }}
+          className="stroke-white/12"
         />
-      )}
-    </svg>
+
+        {NODES.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={2} className="fill-accent/50" />
+        ))}
+
+        {!prefersReducedMotion && (
+          <motion.path
+            d={TRACE_PATH}
+            fill="none"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            className="stroke-accent"
+            pathLength={PULSE_LENGTH}
+            initial={{ pathOffset: -PULSE_LENGTH, opacity: 0 }}
+            animate={
+              showPulse
+                ? { pathOffset: 1, opacity: [0, 1, 1, 0] }
+                : { pathOffset: -PULSE_LENGTH, opacity: 0 }
+            }
+            transition={{ duration: PULSE_DURATION, ease: EASE }}
+          />
+        )}
+      </svg>
+    </div>
   );
 }

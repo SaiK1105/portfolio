@@ -9,10 +9,10 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
  */
 export function Education() {
   return (
-    <section id="education" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-32">
+    <section id="education" className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-28">
       <SectionHeading kicker="05 - Education" title="The {foundation}." />
 
-      <div className="mt-14 border-l border-dashed border-white/10" role="list">
+      <div className="mt-14 max-w-2xl border-l border-dashed border-white/10" role="list">
         {education.items.map((item, i) => (
           <Reveal
             key={item.degree}

@@ -57,7 +57,7 @@ const personJsonLd = {
   name: site.name,
   email: `mailto:${site.email}`,
   url: site.url,
-  sameAs: [site.github],
+  sameAs: [site.github, site.linkedin],
   jobTitle: "Engineering Student — LLM & Agentic AI",
   affiliation: {
     "@type": "CollegeOrUniversity",
@@ -81,6 +81,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
         {children}
+        <div
+          aria-hidden="true"
+          className="grain-overlay pointer-events-none fixed inset-0 z-[60]"
+        />
       </body>
     </html>
   );

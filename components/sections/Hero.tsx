@@ -111,6 +111,11 @@ export function Hero() {
       animate="visible"
       className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 sm:px-8"
     >
+      <div
+        aria-hidden="true"
+        className="hero-glow pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[80vh] w-[120vw] -translate-x-1/2 -translate-y-1/2 rounded-full"
+      />
+
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center text-center">
         {/* Kicker */}
         <motion.p
@@ -125,24 +130,30 @@ export function Hero() {
         <h1 className="mt-6 font-sans text-[17vw] font-extrabold uppercase leading-[0.85] tracking-[-0.06em] text-foreground sm:text-[15vw]">
           <span className="sr-only">S Sai Kumar</span>
           <span aria-hidden="true">
-            {words.map((word) => (
-              <span key={word} className="block">
-                {word.split("").map((letter, i) => {
-                  const index = LETTER_BASE_INDEX + letterIndex;
-                  letterIndex += 1;
-                  return (
-                    <motion.span
-                      key={`${word}-${i}`}
-                      variants={fadeUp}
-                      custom={index}
-                      className="inline-block"
-                    >
-                      {letter}
-                    </motion.span>
-                  );
-                })}
-              </span>
-            ))}
+            {words.map((word, wordIndex) => {
+              const isOutlined = wordIndex > 0;
+              return (
+                <span
+                  key={word}
+                  className={`block ${isOutlined ? "hero-outline" : ""}`}
+                >
+                  {word.split("").map((letter, i) => {
+                    const index = LETTER_BASE_INDEX + letterIndex;
+                    letterIndex += 1;
+                    return (
+                      <motion.span
+                        key={`${word}-${i}`}
+                        variants={fadeUp}
+                        custom={index}
+                        className="inline-block"
+                      >
+                        {letter}
+                      </motion.span>
+                    );
+                  })}
+                </span>
+              );
+            })}
           </span>
         </h1>
 
@@ -175,12 +186,21 @@ export function Hero() {
             );
           })}
         </div>
+
+        {/* Metadata line */}
+        <motion.p
+          variants={fadeUp}
+          custom={taglineIndex + hero.ctas.length + 1}
+          className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-muted"
+        >
+          based in india · open to internships 2026 · s.sai08019@gmail.com
+        </motion.p>
       </div>
 
       {/* Scroll hint */}
       <motion.div
         variants={fadeUp}
-        custom={taglineIndex + hero.ctas.length + 2}
+        custom={taglineIndex + hero.ctas.length + 3}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         aria-hidden="true"
       >

@@ -56,6 +56,13 @@ export default function ResumePage() {
               github.com/{site.githubUser}
             </a>
             <span aria-hidden="true"> | </span>
+            <a
+              href={site.linkedin}
+              className="underline decoration-neutral-300 underline-offset-2 hover:decoration-neutral-500"
+            >
+              linkedin.com/in/saik7337
+            </a>
+            <span aria-hidden="true"> | </span>
             {site.location}
           </p>
         </header>
@@ -129,6 +136,15 @@ export default function ResumePage() {
                   </span>{" "}
                   {project.tech.join(", ")}
                 </p>
+                {"links" in project &&
+                  project.links?.find((link) => link.label === "Live demo") && (
+                    <p className="mt-1 text-neutral-700">
+                      <span className="font-semibold text-neutral-900">Live:</span>{" "}
+                      {project.links
+                        .find((link) => link.label === "Live demo")!
+                        .href.replace(/^https?:\/\//, "")}
+                    </p>
+                  )}
               </article>
             ))}
           </div>
