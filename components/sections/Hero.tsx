@@ -6,13 +6,11 @@ import { hero } from "@/lib/content";
 import { TerminalCard } from "@/components/ui/TerminalCard";
 
 /**
- * Wordmark font-size token, scoped to the hero stage. The terminal's
- * overlap offset below is derived from the same `--wm` value (`* 0.26`)
- * so the "slice" lands in the same spot on the wordmark at every
- * viewport width, exactly like the os.html mockup's `--wm`-relative
- * terminal offset.
+ * Wordmark font-size token, scoped to the hero stage. Sized so
+ * SAI / KUMAR fill the left column of the split hero without ever
+ * colliding with the terminal on the right.
  */
-const WORDMARK_STYLE = { "--wm": "clamp(3.6rem, 11vw, 11rem)" } as CSSProperties;
+const WORDMARK_STYLE = { "--wm": "clamp(3.6rem, 9vw, 9.5rem)" } as CSSProperties;
 
 export function Hero() {
   const prefersReducedMotion = useReducedMotion();
@@ -26,7 +24,7 @@ export function Hero() {
     <section
       id="home"
       aria-label="Introduction"
-      className="relative overflow-x-hidden px-6 pb-16 pt-8 sm:px-8 sm:pb-20 lg:px-[6vw] lg:pt-10"
+      className="relative flex flex-col justify-center overflow-x-hidden px-6 pb-16 pt-8 sm:px-8 sm:pb-20 lg:min-h-[calc(100svh-36px)] lg:px-[6vw] lg:pb-8 lg:pt-6"
     >
       {/* The single real heading on the page — the giant wordmark below is
           a decorative graphic, not text content. */}
@@ -39,19 +37,17 @@ export function Hero() {
         <span className="opacity-70">// {taglineComment}</span>
       </p>
 
-      {/* Hero stage: wordmark + peeking windows + terminal. On desktop the
-          terminal is pulled up over the wordmark with a negative margin
-          (still in normal flow, so whatever comes after it — the CTAs —
-          always clears its real rendered height, no matter how long the
-          conversation grows). On mobile everything just stacks. */}
+      {/* Hero stage — clean split: the full name on the left, the live
+          terminal on the right. No overlap: the name is never covered.
+          On mobile everything stacks (name, then terminal). */}
       <div
         style={WORDMARK_STYLE}
-        className="relative mt-8 flex flex-col gap-10 lg:mt-10 lg:block"
+        className="mt-8 flex flex-col gap-10 lg:mt-10 lg:grid lg:grid-cols-12 lg:items-center lg:gap-8"
       >
-        {/* Wordmark — decorative, sliced by the terminal window below. */}
+        {/* Wordmark — decorative; the real h1 is visually-hidden above. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none relative z-[1] select-none font-display text-[length:var(--wm)] font-bold uppercase leading-[0.94] tracking-[-0.01em] text-text"
+          className="pointer-events-none select-none font-display text-[length:var(--wm)] font-bold uppercase leading-[0.94] tracking-[-0.01em] text-text lg:col-span-7"
         >
           {words.map((word) => (
             <span key={word} className="block">
@@ -60,15 +56,12 @@ export function Hero() {
           ))}
         </div>
 
-        {/* Terminal — the hero's crown jewel, floating over the wordmark.
-            (Decorative "peek" windows were removed: at desktop widths they
-            collided with the wordmark and read as clutter. The sliced
-            wordmark + terminal is a cleaner, more confident composition.) */}
-        <div className="relative z-[5] lg:-mt-[calc(var(--wm)*0.26)] lg:ml-[clamp(0px,4vw,90px)]">
-          <p className="mb-2 font-mono text-xs text-green lg:hidden">
+        {/* Terminal — the hero's crown jewel, on the right. */}
+        <div className="lg:col-span-5">
+          <p className="mb-2 font-mono text-xs text-green">
             <span aria-hidden="true">&#9656; </span>ask the agent anything
           </p>
-          <TerminalCard className="w-full lg:w-[min(640px,90vw)]" />
+          <TerminalCard className="flex w-full flex-col lg:min-h-[400px]" />
         </div>
       </div>
 
