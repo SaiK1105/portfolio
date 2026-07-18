@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useReducedMotion } from "framer-motion";
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -36,15 +35,19 @@ export function Pet({ variant, busy }: PetProps) {
   const boxRef = useRef<HTMLSpanElement>(null);
   const eyeL = useRef<HTMLSpanElement>(null);
   const eyeR = useRef<HTMLSpanElement>(null);
-  const reducedMotion = useReducedMotion();
 
   // Last-applied translate so a mid-track blink composes with it.
   const translateRef = useRef("translate(0px,0px)");
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafPending = useRef(false);
 
+  // Eye micro-motion (≤2.5px pupil shifts) runs even under
+  // prefers-reduced-motion: it's far below vestibular-trigger scale, and
+  // a completely dead mascot reads as broken. The big motions — bob,
+  // busy glow, minimize scale, boot — stay properly disabled via the
+  // global reduced-motion CSS block and the framer guards.
   useEffect(() => {
-    if (reducedMotion) return; // fully static under reduced motion
+    let lastMouseAt = 0;
 
     function track() {
       rafPending.current = false;
@@ -61,6 +64,7 @@ export function Pet({ variant, busy }: PetProps) {
     }
 
     function onMouseMove(e: MouseEvent) {
+      lastMouseAt = Date.now();
       mouseRef.current = { x: e.clientX, y: e.clientY };
       if (rafPending.current) return;
       rafPending.current = true;
@@ -68,6 +72,18 @@ export function Pet({ variant, busy }: PetProps) {
     }
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
+
+    // Idle glances: with no cursor activity (touch devices, or a parked
+    // mouse) the pupils saccade to a random nearby spot every few
+    // seconds so the pet still reads as alive.
+    const wanderTimer = setInterval(() => {
+      if (Date.now() - lastMouseAt < 3500) return;
+      const dx = (Math.random() * 5 - 2.5).toFixed(2);
+      const dy = (Math.random() * 4 - 2).toFixed(2);
+      translateRef.current = `translate(${dx}px,${dy}px)`;
+      if (eyeL.current) eyeL.current.style.transform = translateRef.current;
+      if (eyeR.current) eyeR.current.style.transform = translateRef.current;
+    }, 2800);
 
     let blinkTimer: ReturnType<typeof setTimeout>;
     let openTimer: ReturnType<typeof setTimeout>;
@@ -85,10 +101,11 @@ export function Pet({ variant, busy }: PetProps) {
 
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
+      clearInterval(wanderTimer);
       clearTimeout(blinkTimer);
       clearTimeout(openTimer);
     };
-  }, [reducedMotion]);
+  }, []);
 
   // Image is 463x260 (1.78:1) — wider than tall, rotors included.
   // Exactly ONE position class per variant: absolute IS the pupil

@@ -658,6 +658,9 @@ html[data-booting] body::after {
   background: var(--pet-pupil);
   border-radius: 9999px;
   will-change: transform;
+  /* Smooth pursuit: softens per-frame tracking steps and turns idle
+     saccades into quick glides. Zeroed by the reduced-motion block. */
+  transition: transform 160ms ease-out;
 }
 
 /* Agent thinking: pupils glow amber. */
