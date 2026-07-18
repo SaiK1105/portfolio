@@ -668,3 +668,23 @@ html[data-booting] body::after {
     text-shadow: 0 0 10px var(--amber);
   }
 }
+
+/* Slow idle bob keeps the pet feeling alive; CSS animation so the global
+   prefers-reduced-motion block above zeroes it automatically. The layered
+   drop-shadows cut a bg-colored outline around the glyphs so the pet stays
+   readable when it overhangs busy page content (floating mode). */
+.pet-bob {
+  animation: pet-bob 3.5s ease-in-out infinite;
+  filter: drop-shadow(1px 0 0 var(--bg)) drop-shadow(-1px 0 0 var(--bg))
+    drop-shadow(0 1px 0 var(--bg)) drop-shadow(0 -1px 0 var(--bg));
+}
+
+@keyframes pet-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
