@@ -17,6 +17,20 @@ const MAX_HISTORY_TURNS = 8;
 // The server's harness loop can make two 12s provider calls back to back
 // (tool round + grounded answer), so the client waits out the worst case.
 const REQUEST_TIMEOUT_MS = 30_000;
+// Read only inside the "status" handler, never rendered during the
+// static/SSR pass, so a module-scope Date.now() here can't hydration-mismatch.
+const PAGE_LOAD = Date.now();
+
+const THINKING_VERBS = [
+  "thinking",
+  "grepping",
+  "pondering",
+  "reticulating",
+  "inferring",
+  "brewing",
+  "cerebrating",
+  "vibing",
+];
 
 /** Day-flavored line above the hint, keyed by Date#getDay() (0 = Sunday). */
 const DAY_GREETINGS: Record<number, string> = {
@@ -34,7 +48,8 @@ type ConversationMessage = { role: "user" | "assistant"; content: string };
 type Entry =
   | { kind: "echo"; text: string }
   | { kind: "output"; text: string; tone?: "muted" }
-  | { kind: "thinking" };
+  | { kind: "thinking" }
+  | { kind: "tool"; text: string };
 
 // Mirrors the tool contract in functions/api/chat.ts. The server already
 // validates tool name + enum args before sending an action down, but we
@@ -51,21 +66,21 @@ const SECTION_VALUES = new Set([
 ]);
 const PROJECT_VALUES = new Set(["argus-v", "vomp"]);
 
-/** Validate + describe an action as a subtle confirmation line, or null if it doesn't check out. */
+/** Validate an action and describe it as bare call syntax (rendered as a ⏺/⎿ tool line), or null if it doesn't check out. */
 function describeAction(action: ToolAction): string | null {
   switch (action.tool) {
     case "navigate": {
       const section = action.args.section;
       if (typeof section !== "string" || !SECTION_VALUES.has(section)) return null;
-      return `→ scrolling to ${section}`;
+      return `navigate(${section})`;
     }
     case "open_case_study": {
       const project = action.args.project;
       if (typeof project !== "string" || !PROJECT_VALUES.has(project)) return null;
-      return `→ opening ${project} case study`;
+      return `open_case_study(${project})`;
     }
     case "open_resume":
-      return "→ opening resume";
+      return "open_resume()";
     default:
       return null;
   }
@@ -103,6 +118,7 @@ function helpLines(): string[] {
     "skills    - tech stack",
     "resume    - open resume.pdf",
     "contact   - email + github",
+    "status    - system status",
     "clear     - clear the screen",
     "or just ask a question",
   ];
@@ -134,7 +150,7 @@ function sanitizeTrace(trace: unknown): string[] {
   if (!Array.isArray(trace)) return [];
   return trace
     .filter((t): t is string => typeof t === "string" && t.length > 0 && t.length <= 80)
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 /**
@@ -163,6 +179,40 @@ function Cursor({ reducedMotion }: { reducedMotion: boolean }) {
 }
 
 /**
+ * Claude-Code-style "thinking" line: cycles a verb + elapsed seconds while
+ * a request is in flight. Reduced motion gets a static line, no intervals.
+ */
+function ThinkingLine() {
+  const reducedMotion = useReducedMotion();
+  const [verbIdx, setVerbIdx] = useState(0);
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const start = Date.now();
+    // 600ms tick with verb derived from elapsed time: seconds never skip
+    // a number while verbs still rotate at a calm ~1.2s cadence.
+    const id = setInterval(() => {
+      const elapsed = Date.now() - start;
+      setVerbIdx(Math.floor(elapsed / 1200) % THINKING_VERBS.length);
+      setSeconds(Math.floor(elapsed / 1000));
+    }, 600);
+    return () => clearInterval(id);
+  }, [reducedMotion]);
+
+  if (reducedMotion) {
+    return <div className="text-muted">✻ thinking…</div>;
+  }
+
+  return (
+    <div>
+      <span className="text-amber animate-pulse">✻</span> {THINKING_VERBS[verbIdx]}…{" "}
+      <span className="text-muted">({seconds}s)</span>
+    </div>
+  );
+}
+
+/**
  * TerminalCard — the site's signature element, reskinned as an OS window:
  * "sai@agent: ~/terminal — zsh". Types out `about.terminalLines` one
  * character at a time once it scrolls into view, then hands control to the
@@ -170,7 +220,10 @@ function Cursor({ reducedMotion }: { reducedMotion: boolean }) {
  * /api/chat. Respects prefers-reduced-motion by rendering the intro
  * instantly and killing the blinking caret.
  */
-export function TerminalCard({ className = "" }: { className?: string } = {}) {
+export function TerminalCard({
+  className = "",
+  onBusyChange,
+}: { className?: string; onBusyChange?: (busy: boolean) => void } = {}) {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -182,7 +235,14 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
 
-  const skipTyping = reducedMotion;
+  // useReducedMotion is false during SSR but true on a reduce-user's first
+  // client render — branching markup on it directly is a hydration mismatch
+  // (React #418). Gate it behind mount so the first client render always
+  // matches the server; reduce users see the full intro one frame later.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const skipTyping = mounted && reducedMotion;
   const introDone = skipTyping || lineIndex >= lines.length;
 
   const [history, setHistory] = useState<Entry[]>([]);
@@ -227,6 +287,7 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
 
   async function runFreeText(raw: string) {
     setIsLoading(true);
+    onBusyChange?.(true);
     pushEntries([{ kind: "thinking" }]);
 
     const nextMessages = [...conversationRef.current, { role: "user" as const, content: raw }].slice(
@@ -287,12 +348,11 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
         { role: "assistant" as const, content: data.reply },
       ].slice(-MAX_HISTORY_TURNS);
 
-      // Tool trace first (muted "⚙ read_case_study(argus-v)" lines — the
-      // agent's server-side work made visible), then the reply itself.
+      // Tool trace first (Claude-Code-style ⏺/⎿ tool lines — the agent's
+      // server-side work made visible), then the reply itself.
       const traceEntries: Entry[] = sanitizeTrace(data.trace).map((t) => ({
-        kind: "output",
-        text: `⚙ ${t}`,
-        tone: "muted",
+        kind: "tool",
+        text: t,
       }));
       setHistory((h) =>
         replaceThinking(h, ...traceEntries, { kind: "output", text: data.reply as string }),
@@ -300,12 +360,12 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
 
       // Client-executed tools: print the reply first, then run each
       // validated action (scroll / open case study / open resume) and
-      // echo a subtle confirmation line for it.
+      // echo a tool line for it (same ⏺/⎿ styling as the server trace).
       if (Array.isArray(data.actions)) {
         for (const action of data.actions) {
           const description = describeAction(action);
           if (!description) continue;
-          pushEntries([{ kind: "output", text: description, tone: "muted" }]);
+          pushEntries([{ kind: "tool", text: description }]);
           executeAction(action, reducedMotion);
         }
       }
@@ -320,6 +380,7 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
     } finally {
       clearTimeout(timeoutId);
       setIsLoading(false);
+      onBusyChange?.(false);
     }
   }
 
@@ -353,6 +414,22 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
       case "contact":
         pushEntries([{ kind: "output", text: `${site.email} · ${site.github}` }]);
         return;
+      case "status": {
+        const uptimeSeconds = Math.floor((Date.now() - PAGE_LOAD) / 1000);
+        // +1 counts the status command itself — the echo above went through
+        // a functional setState, so `history` here is still the prior render.
+        const messageCount = history.filter((e) => e.kind === "echo").length + 1;
+        pushEntries(
+          [
+            "sai-os v1.0 — system status",
+            `uptime: ${Math.floor(uptimeSeconds / 60)}m${uptimeSeconds % 60}s`,
+            `messages this session: ${messageCount}`,
+            "providers: nvidia → kimi → workers-ai",
+            "all systems operational",
+          ].map((text) => ({ kind: "output" as const, text })),
+        );
+        return;
+      }
       case "sudo hire-me":
         pushEntries([
           { kind: "output", text: `permission granted. forwarding to ${site.email} …` },
@@ -436,17 +513,27 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
 
                 {history.map((entry, i) => {
                   if (entry.kind === "thinking") {
-                    return (
-                      <div key={i} className="text-muted">
-                        thinking<span className="animate-pulse">…</span>
-                      </div>
-                    );
+                    return <ThinkingLine key={i} />;
                   }
                   if (entry.kind === "echo") {
                     return (
                       <div key={i} className="text-text">
                         <span className="mr-1.5 text-green">{PROMPT}</span>
                         {entry.text}
+                      </div>
+                    );
+                  }
+                  // ● and └ instead of Claude Code's ⏺/⎿ — next/font serves a
+                  // latin-subset IBM Plex Mono, so rarer glyphs tofu on machines
+                  // whose fallback fonts lack them. These two are universal.
+                  if (entry.kind === "tool") {
+                    return (
+                      <div key={i}>
+                        <div className="text-text">
+                          <span className="text-green">● </span>
+                          {entry.text}
+                        </div>
+                        <div className="pl-5 text-muted">└ done</div>
                       </div>
                     );
                   }

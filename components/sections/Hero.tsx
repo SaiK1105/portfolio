@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { hero } from "@/lib/content";
-import { TerminalCard } from "@/components/ui/TerminalCard";
+import { TerminalHost } from "@/components/os/TerminalHost";
 
 /**
  * Wordmark font-size token, scoped to the hero stage. Sized so
@@ -58,10 +58,7 @@ export function Hero() {
 
         {/* Terminal — the hero's crown jewel, on the right. */}
         <div className="lg:col-span-5">
-          <p className="mb-2 font-mono text-xs text-green">
-            <span aria-hidden="true">&#9656; </span>ask the agent anything
-          </p>
-          <TerminalCard className="flex w-full flex-col lg:min-h-[400px]" />
+          <TerminalHost />
         </div>
       </div>
 

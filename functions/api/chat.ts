@@ -4,10 +4,11 @@
  * tool-calling agent: NVIDIA NIM -> Kimi (Cast AI) -> Workers AI safety net.
  * Stateless; the client sends trimmed history each turn.
  *
- * Harness loop: up to MAX_MODEL_CALLS per request. If the model calls the
- * server-executed read_case_study tool, its result is fed back and the model
- * is called once more for a grounded final answer. Client-executed tools
- * (navigate etc.) are forwarded to the browser as `actions`, never looped.
+ * Harness loop: up to MAX_MODEL_CALLS per request — up to two tool rounds,
+ * then the final answer. Each round the model calls the server-executed
+ * read_case_study tool, its result is fed back, and the model is called
+ * again. Client-executed tools (navigate etc.) are forwarded to the browser
+ * as `actions`, never looped.
  */
 
 import * as caseArgus from "../../lib/case-argus";
@@ -42,9 +43,9 @@ const REQUEST_BUDGET_MS = 22_000;
 const MAX_MESSAGES = 8;
 const MAX_CHARS = 500;
 const MAX_ACTIONS = 2;
-// Hard loop bound: one tool round, then the final answer. Never a third call.
-const MAX_MODEL_CALLS = 2;
-const MAX_TRACE = 3;
+// Hard loop bound: up to two tool rounds, then the final answer. Never a fourth call.
+const MAX_MODEL_CALLS = 3;
+const MAX_TRACE = 4;
 
 // (b) Reject oversized bodies before we ever touch JSON.parse.
 const MAX_BODY_BYTES = 8 * 1024; // 8KB
@@ -195,7 +196,7 @@ If asked something unrelated to Sai or this site, give a one-line friendly redir
  * visitor as garbage. Composed into SYSTEM_PROMPT via the __TOOL_CLAUSE__ slot.
  */
 const TOOL_CLAUSE = `You can also act, not just talk: you have tools to navigate the visitor around the site (navigate), open a project case study (open_case_study), or open the resume PDF (open_resume). Call one when a visitor asks to see, go to, open, or check out something you have a tool for — don't just describe it, do it. You may still say a short line alongside the tool call.
-You also have a read tool: read_case_study returns the full case-study document for argus-v or vomp. For deep or technical questions about those two projects, call it first and answer only from what it returns — still in your terminal voice, still ~80 words max.
+You also have a read tool: read_case_study returns the full case-study document for argus-v or vomp. For deep or technical questions about those two projects, call it first and answer only from what it returns — still in your terminal voice, still ~80 words max. you can chain tools across rounds — for comparison questions, call read_case_study for both argus-v and vomp before answering, ideally both calls in the same turn (parallel tool calls are supported and faster).
 `;
 const NO_TOOL_CLAUSE = `You have no navigation tools available right now — never write function-call syntax, never claim to be scrolling or opening anything. Just answer in words, and point visitors to sections or /work/... paths in plain text.
 `;
@@ -505,6 +506,10 @@ const callOpenAICompatible = async (
   const loopMessages: ProviderMessage[] = [...messages];
   const actions: ToolAction[] = [];
   const trace: string[] = [];
+  // Anti-spin guard: a model can loop read_case_study on the same project
+  // across rounds instead of progressing. Second read of a project already
+  // served is a no-op nudge, not another doc dump.
+  const readProjects = new Set<string>();
 
   for (let round = 0; round < MAX_MODEL_CALLS; round++) {
     const message = await requestCompletion(url, apiKey, model, loopMessages, deadline);
@@ -517,7 +522,7 @@ const callOpenAICompatible = async (
     const isLastRound = round === MAX_MODEL_CALLS - 1;
 
     // Done: no data to feed back (or hard loop bound hit — server-tool calls
-    // in the final round are dropped, never granted a third model call).
+    // in the final round are dropped, never granted a fourth model call).
     if (!wantsServerTool || isLastRound) {
       const text = typeof message.content === "string" ? message.content.trim() : "";
       const capped = actions.slice(0, MAX_ACTIONS);
@@ -548,8 +553,13 @@ const callOpenAICompatible = async (
           project = undefined;
         }
         if (typeof project === "string" && project in CASE_DOCS) {
-          content = CASE_DOCS[project as Project];
-          if (trace.length < MAX_TRACE) trace.push(`read_case_study(${project})`);
+          if (readProjects.has(project)) {
+            content = `case study for ${project} already provided above — use it and answer now.`;
+          } else {
+            readProjects.add(project);
+            content = CASE_DOCS[project as Project];
+            if (trace.length < MAX_TRACE) trace.push(`read_case_study(${project})`);
+          }
         } else {
           content = "unknown project — valid values: argus-v, vomp.";
         }

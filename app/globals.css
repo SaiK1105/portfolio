@@ -634,3 +634,37 @@ html[data-booting] body::after {
   background: var(--bg);
   z-index: 900;
 }
+
+/* ============================================================
+ * Harness pet — eye glow + busy pulse
+ * ============================================================
+ * Eye tracking/blink transforms are written straight to these spans
+ * from Pet.tsx (no React re-renders); this stylesheet only owns their
+ * color/glow and the busy pulse. Busy is a CSS animation rather than a
+ * JS/Framer loop specifically so the prefers-reduced-motion block above
+ * (which zeroes every animation-duration) turns it off automatically —
+ * no separate reduced-motion branch needed for it.
+ */
+
+.pet-eye {
+  color: var(--amber);
+  text-shadow: 0 0 5px var(--amber);
+  display: inline-block;
+  will-change: transform;
+}
+
+.pet-eye--busy {
+  animation: pet-busy 900ms ease-in-out infinite;
+}
+
+@keyframes pet-busy {
+  0%,
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 5px var(--amber);
+  }
+  50% {
+    opacity: 0.55;
+    text-shadow: 0 0 10px var(--amber);
+  }
+}
