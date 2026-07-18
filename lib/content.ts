@@ -25,7 +25,7 @@ export const about = {
     "> ingesting video · audio · transcript streams",
     "> orchestrating LangGraph agent workflows",
     "> caching hot paths with Redis",
-    "> classifying policy stance across 3 modalities",
+    "> classifying policy stance from voice + text",
     "> status: available for internships 2026",
   ],
 } as const;

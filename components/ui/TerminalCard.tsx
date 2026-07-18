@@ -14,7 +14,9 @@ const HINT_LINE = "type 'help' or ask me anything";
 const PROMPT = "sai@agent:~$ ";
 const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_TURNS = 8;
-const REQUEST_TIMEOUT_MS = 15_000;
+// The server's harness loop can make two 12s provider calls back to back
+// (tool round + grounded answer), so the client waits out the worst case.
+const REQUEST_TIMEOUT_MS = 30_000;
 
 /** Day-flavored line above the hint, keyed by Date#getDay() (0 = Sunday). */
 const DAY_GREETINGS: Record<number, string> = {
@@ -119,9 +121,20 @@ function skillLines(): string[] {
   return skills.groups.map((g) => `${g.title}: ${g.items.join(", ")}`);
 }
 
-/** Drop any pending "thinking…" entry and append the real result in its place. */
-function replaceThinking(history: Entry[], replacement: Entry): Entry[] {
-  return [...history.filter((e) => e.kind !== "thinking"), replacement];
+/** Drop any pending "thinking…" entry and append the real result(s) in its place. */
+function replaceThinking(history: Entry[], ...replacements: Entry[]): Entry[] {
+  return [...history.filter((e) => e.kind !== "thinking"), ...replacements];
+}
+
+/**
+ * Validate the server's tool trace (lines like "read_case_study(argus-v)")
+ * before rendering — array of short strings only, capped, else dropped.
+ */
+function sanitizeTrace(trace: unknown): string[] {
+  if (!Array.isArray(trace)) return [];
+  return trace
+    .filter((t): t is string => typeof t === "string" && t.length > 0 && t.length <= 80)
+    .slice(0, 3);
 }
 
 /**
@@ -265,6 +278,7 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
         reply?: string;
         error?: string;
         actions?: ToolAction[];
+        trace?: unknown;
       };
       if (typeof data.reply !== "string") throw new Error("malformed response");
 
@@ -272,7 +286,17 @@ export function TerminalCard({ className = "" }: { className?: string } = {}) {
         ...nextMessages,
         { role: "assistant" as const, content: data.reply },
       ].slice(-MAX_HISTORY_TURNS);
-      setHistory((h) => replaceThinking(h, { kind: "output", text: data.reply as string }));
+
+      // Tool trace first (muted "⚙ read_case_study(argus-v)" lines — the
+      // agent's server-side work made visible), then the reply itself.
+      const traceEntries: Entry[] = sanitizeTrace(data.trace).map((t) => ({
+        kind: "output",
+        text: `⚙ ${t}`,
+        tone: "muted",
+      }));
+      setHistory((h) =>
+        replaceThinking(h, ...traceEntries, { kind: "output", text: data.reply as string }),
+      );
 
       // Client-executed tools: print the reply first, then run each
       // validated action (scroll / open case study / open resume) and

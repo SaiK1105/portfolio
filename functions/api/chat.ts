@@ -3,7 +3,15 @@
  * Backs the interactive terminal's free-text mode with a multi-provider
  * tool-calling agent: NVIDIA NIM -> Kimi (Cast AI) -> Workers AI safety net.
  * Stateless; the client sends trimmed history each turn.
+ *
+ * Harness loop: up to MAX_MODEL_CALLS per request. If the model calls the
+ * server-executed read_case_study tool, its result is fed back and the model
+ * is called once more for a grounded final answer. Client-executed tools
+ * (navigate etc.) are forwarded to the browser as `actions`, never looped.
  */
+
+import * as caseArgus from "../../lib/case-argus";
+import * as caseVomp from "../../lib/case-vomp";
 
 interface Env {
   AI: { run(model: string, input: unknown): Promise<{ response?: string }> };
@@ -25,10 +33,18 @@ const KIMI_MODEL = "kimi-k2.7";
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const KIMI_URL = "https://llm.cast.ai/openai/v1/chat/completions";
 const PROVIDER_TIMEOUT_MS = 12_000;
+// Total budget for the tool-calling providers, measured from request start.
+// Keeps the whole loop + retries inside the client's 30s fetch timeout with
+// room left for the Workers AI safety net to still produce an answer
+// (measured: budget + safety net must stay under ~28s end to end).
+const REQUEST_BUDGET_MS = 22_000;
 
 const MAX_MESSAGES = 8;
 const MAX_CHARS = 500;
 const MAX_ACTIONS = 2;
+// Hard loop bound: one tool round, then the final answer. Never a third call.
+const MAX_MODEL_CALLS = 2;
+const MAX_TRACE = 3;
 
 // (b) Reject oversized bodies before we ever touch JSON.parse.
 const MAX_BODY_BYTES = 8 * 1024; // 8KB
@@ -166,7 +182,7 @@ Facts (only source of truth — never invent beyond these):
 - Certifications: DSA to Web Development (GeeksForGeeks), Cloud Computing (Coursera).
 - Contact: s.sai08019@gmail.com · github.com/SaiK1105 · linkedin.com/in/saik7337 · India. Open to internships (2026), research collabs.
 - Code for A.R.G.U.S-V is available on request via email.
-- This site: Next.js static export on Cloudflare Pages; you run on Workers AI.
+- This site: Next.js static export on Cloudflare Pages; you run on a multi-provider model chain behind /api/chat.
 
 __TOOL_CLAUSE__
 If asked something unrelated to Sai or this site, give a one-line friendly redirect back to Sai. If asked whether they should hire Sai: yes, obviously — point at the projects.`;
@@ -179,28 +195,60 @@ If asked something unrelated to Sai or this site, give a one-line friendly redir
  * visitor as garbage. Composed into SYSTEM_PROMPT via the __TOOL_CLAUSE__ slot.
  */
 const TOOL_CLAUSE = `You can also act, not just talk: you have tools to navigate the visitor around the site (navigate), open a project case study (open_case_study), or open the resume PDF (open_resume). Call one when a visitor asks to see, go to, open, or check out something you have a tool for — don't just describe it, do it. You may still say a short line alongside the tool call.
+You also have a read tool: read_case_study returns the full case-study document for argus-v or vomp. For deep or technical questions about those two projects, call it first and answer only from what it returns — still in your terminal voice, still ~80 words max.
 `;
 const NO_TOOL_CLAUSE = `You have no navigation tools available right now — never write function-call syntax, never claim to be scrolling or opening anything. Just answer in words, and point visitors to sections or /work/... paths in plain text.
 `;
 
-const SYSTEM_PROMPT_TOOLS = SYSTEM_PROMPT.replace("__TOOL_CLAUSE__", TOOL_CLAUSE);
+// Exported for the local provider probe (bun imports this module directly);
+// Pages Functions ignore extra exports.
+export const SYSTEM_PROMPT_TOOLS = SYSTEM_PROMPT.replace("__TOOL_CLAUSE__", TOOL_CLAUSE);
 const SYSTEM_PROMPT_NO_TOOLS = SYSTEM_PROMPT.replace("__TOOL_CLAUSE__", NO_TOOL_CLAUSE);
 
 // --- Tools -----------------------------------------------------------------
 //
-// Client-executed: the model can only request these, it can't run them
-// itself (this is a stateless server function, not a browser). One model
-// turn only — no server-side tool loop. If the model asks for a tool, we
-// validate it against the known names/enums below and forward it to the
-// client as an `action`; the client is the one that actually scrolls or
-// navigates.
+// Two kinds:
+// - Client-executed (navigate, open_case_study, open_resume): the model can
+//   only request these; we validate name + enum args and forward them to the
+//   browser as an `action` — the client is what actually scrolls/navigates.
+// - Server-executed (read_case_study): runs right here, and its result is
+//   fed back to the model for one more call (the harness loop) so answers
+//   about the flagship projects are grounded in the real case-study docs
+//   instead of the short system-prompt fact sheet.
 
 const SECTION_VALUES = ["home", "projects", "skills", "github", "education", "contact"] as const;
 const PROJECT_VALUES = ["argus-v", "vomp"] as const;
 type Section = (typeof SECTION_VALUES)[number];
 type Project = (typeof PROJECT_VALUES)[number];
 
-const TOOLS = [
+/**
+ * Flatten a case-study module (lib/case-argus.ts / lib/case-vomp.ts) into a
+ * plain-text doc for the model. Both files are pure data with the same shape,
+ * so a generic depth-first string walk keeps declaration order and reads
+ * coherently. `{accent}` brace markers are presentation-only — stripped.
+ */
+const collectStrings = (value: unknown, out: string[]): void => {
+  if (typeof value === "string") {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStrings(item, out);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectStrings(item, out);
+  }
+};
+
+const buildCaseDoc = (mod: object): string => {
+  const out: string[] = [];
+  collectStrings(mod, out);
+  return out.join("\n").replace(/[{}]/g, "").slice(0, 4000);
+};
+
+export const CASE_DOCS: Record<Project, string> = {
+  "argus-v": buildCaseDoc(caseArgus),
+  vomp: buildCaseDoc(caseVomp),
+};
+
+export const TOOLS = [
   {
     type: "function",
     function: {
@@ -251,7 +299,29 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "read_case_study",
+      description:
+        "Read the full case-study document for one of Sai's flagship projects. Call this before answering deep or technical questions about them.",
+      parameters: {
+        type: "object",
+        properties: {
+          project: {
+            type: "string",
+            enum: PROJECT_VALUES,
+            description: "Which project's case study to read.",
+          },
+        },
+        required: ["project"],
+        additionalProperties: false,
+      },
+    },
+  },
 ] as const;
+
+const SERVER_TOOL = "read_case_study";
 
 type ToolAction =
   | { tool: "navigate"; args: { section: Section } }
@@ -277,9 +347,21 @@ interface OpenAIChatCompletionResponse {
   }>;
 }
 
+/**
+ * Message shape for the loop: plain system/user/assistant turns, plus the
+ * OpenAI tool protocol — an assistant turn carrying `tool_calls` followed by
+ * one `role:"tool"` result per call (matched by `tool_call_id`).
+ */
+interface ProviderMessage {
+  role: string;
+  content: string | null;
+  tool_calls?: OpenAIToolCall[];
+  tool_call_id?: string;
+}
+
 interface OpenAIChatCompletionRequest {
   model: string;
-  messages: Array<{ role: string; content: string }>;
+  messages: ProviderMessage[];
   tools?: typeof TOOLS;
   max_tokens: number;
   temperature: number;
@@ -288,6 +370,7 @@ interface OpenAIChatCompletionRequest {
 interface ProviderResult {
   text: string;
   actions: ToolAction[];
+  trace: string[];
 }
 
 /**
@@ -358,14 +441,14 @@ const synthesizeConfirmation = (actions: ToolAction[]): string => {
   }
 };
 
-const callOpenAICompatible = async (
+/** One chat-completions POST with retry-on-5xx/429, bounded by `deadline`. */
+const requestCompletion = async (
   url: string,
   apiKey: string,
   model: string,
-  messages: Array<{ role: string; content: string }>,
-): Promise<ProviderResult | null> => {
-  if (!apiKey) return null;
-
+  messages: ProviderMessage[],
+  deadline: number,
+): Promise<(OpenAIChatMessage & { tool_calls?: OpenAIToolCall[] }) | null> => {
   const requestBody: OpenAIChatCompletionRequest = {
     model,
     messages,
@@ -374,11 +457,14 @@ const callOpenAICompatible = async (
     temperature: 0.7,
   };
 
-  // Free-tier NIM endpoints 503 under load intermittently; one quick retry
-  // turns most of those into a success before we fall through to the next
-  // provider.
+  // Free-tier NIM endpoints 503 in short bursts under load (measured: bursts
+  // clear within seconds, and a failed 503 returns in <1s, so retries are
+  // cheap). Three attempts with growing backoff, all clamped to the request
+  // deadline so a slow provider can never starve the safety net.
   let res: Response | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const remaining = deadline - Date.now();
+    if (remaining < 2_000) return null;
     res = await fetch(url, {
       method: "POST",
       headers: {
@@ -386,35 +472,113 @@ const callOpenAICompatible = async (
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      signal: AbortSignal.timeout(Math.min(PROVIDER_TIMEOUT_MS, remaining)),
     });
     if (res.ok) break;
     if (res.status < 500 && res.status !== 429) return null; // 4xx (except 429) won't fix on retry
-    if (attempt === 0) await new Promise((r) => setTimeout(r, 400));
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 400 + attempt * 800));
   }
 
   if (!res || !res.ok) return null;
 
   const data = (await res.json()) as OpenAIChatCompletionResponse;
-  const message = data.choices?.[0]?.message;
-  if (!message) return null;
+  return data.choices?.[0]?.message ?? null;
+};
 
-  const actions = extractActions(message.tool_calls);
-  const text = typeof message.content === "string" ? message.content.trim() : "";
+/**
+ * The harness loop, per provider. Up to MAX_MODEL_CALLS: if a round asks for
+ * read_case_study, execute it here, append the tool result, and call the
+ * SAME provider again for the grounded final answer. Client tool calls are
+ * collected as actions across all rounds. Any failed call returns null so
+ * the chain falls through to the next provider with the original messages —
+ * no cross-provider mid-loop handoff.
+ */
+const callOpenAICompatible = async (
+  url: string,
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  deadline: number,
+): Promise<ProviderResult | null> => {
+  if (!apiKey) return null;
 
-  if (!text && actions.length === 0) return null;
+  const loopMessages: ProviderMessage[] = [...messages];
+  const actions: ToolAction[] = [];
+  const trace: string[] = [];
 
-  return { text: text || synthesizeConfirmation(actions), actions };
+  for (let round = 0; round < MAX_MODEL_CALLS; round++) {
+    const message = await requestCompletion(url, apiKey, model, loopMessages, deadline);
+    if (!message) return null;
+
+    actions.push(...extractActions(message.tool_calls));
+
+    const toolCalls = message.tool_calls ?? [];
+    const wantsServerTool = toolCalls.some((c) => c.function?.name === SERVER_TOOL);
+    const isLastRound = round === MAX_MODEL_CALLS - 1;
+
+    // Done: no data to feed back (or hard loop bound hit — server-tool calls
+    // in the final round are dropped, never granted a third model call).
+    if (!wantsServerTool || isLastRound) {
+      const text = typeof message.content === "string" ? message.content.trim() : "";
+      const capped = actions.slice(0, MAX_ACTIONS);
+      if (!text && capped.length === 0 && trace.length === 0) return null;
+      return { text: text || synthesizeConfirmation(capped), actions: capped, trace };
+    }
+
+    // Tool round: echo the assistant turn, then answer EVERY tool_call with a
+    // role:"tool" result (strict OpenAI protocol — providers reject dangling
+    // tool_call_ids). Client tools get a short "already executed" note; the
+    // server tool gets the real case-study doc.
+    toolCalls.forEach((c, i) => {
+      if (!c.id) c.id = `call_${i}`;
+    });
+    loopMessages.push({
+      role: "assistant",
+      content: typeof message.content === "string" ? message.content : null,
+      tool_calls: toolCalls,
+    });
+    for (const call of toolCalls) {
+      let content = "action forwarded to the visitor's browser and executed.";
+      if (call.function?.name === SERVER_TOOL) {
+        let project: unknown;
+        try {
+          project = (JSON.parse(call.function?.arguments ?? "{}") as Record<string, unknown>)
+            .project;
+        } catch {
+          project = undefined;
+        }
+        if (typeof project === "string" && project in CASE_DOCS) {
+          content = CASE_DOCS[project as Project];
+          if (trace.length < MAX_TRACE) trace.push(`read_case_study(${project})`);
+        } else {
+          content = "unknown project — valid values: argus-v, vomp.";
+        }
+      }
+      loopMessages.push({ role: "tool", tool_call_id: call.id, content });
+    }
+  }
+
+  return null; // unreachable — the last round always returns above
 };
 
 const callWorkersAI = async (
   env: Env,
   messages: Array<{ role: string; content: string }>,
 ): Promise<ProviderResult | null> => {
+  // The safety net can't run the tool loop, so ground it the cheap way:
+  // if the visitor's latest message mentions a flagship project, inline that
+  // case-study doc into the system prompt (keyword RAG). Without this, the
+  // degraded path confidently invents project details — the one failure mode
+  // a portfolio can't afford.
+  const latest = messages[messages.length - 1]?.content ?? "";
+  let grounding = "";
+  if (/argus/i.test(latest)) grounding += `\n\nCase-study doc (argus-v):\n${CASE_DOCS["argus-v"]}`;
+  if (/vomp|monetary|fomc|fed\b/i.test(latest)) grounding += `\n\nCase-study doc (vomp):\n${CASE_DOCS.vomp}`;
+
   // Swap the tool-aware system prompt for the tool-free one so the safety
   // net never narrates fake tool calls. messages[0] is always the system turn.
   const noToolMessages = messages.map((m, i) =>
-    i === 0 ? { role: m.role, content: SYSTEM_PROMPT_NO_TOOLS } : m,
+    i === 0 ? { role: m.role, content: SYSTEM_PROMPT_NO_TOOLS + grounding } : m,
   );
   const result = await env.AI.run(WORKERS_AI_MODEL, {
     messages: noToolMessages,
@@ -422,7 +586,7 @@ const callWorkersAI = async (
     temperature: 0.7,
   });
   if (!result.response) return null;
-  return { text: result.response, actions: [] };
+  return { text: result.response, actions: [], trace: [] };
 };
 
 /**
@@ -434,15 +598,29 @@ const runProviderChain = async (
   env: Env,
   messages: Array<{ role: string; content: string }>,
 ): Promise<ProviderResult | null> => {
+  const deadline = Date.now() + REQUEST_BUDGET_MS;
+
   try {
-    const nvidia = await callOpenAICompatible(NVIDIA_URL, env.NVIDIA_API_KEY, NVIDIA_MODEL, messages);
+    const nvidia = await callOpenAICompatible(
+      NVIDIA_URL,
+      env.NVIDIA_API_KEY,
+      NVIDIA_MODEL,
+      messages,
+      deadline,
+    );
     if (nvidia) return nvidia;
   } catch {
     // fall through to next provider
   }
 
   try {
-    const kimi = await callOpenAICompatible(KIMI_URL, env.KIMI_API_KEY, KIMI_MODEL, messages);
+    const kimi = await callOpenAICompatible(
+      KIMI_URL,
+      env.KIMI_API_KEY,
+      KIMI_MODEL,
+      messages,
+      deadline,
+    );
     if (kimi) return kimi;
   } catch {
     // fall through to next provider
@@ -534,11 +712,16 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       );
     }
 
-    const responseBody: { reply: string; actions?: ToolAction[] } = {
-      reply: result.text || "…the agent stared blankly. try again.",
+    // The persona says "no markdown" but models still leak **bold** into
+    // grounded answers occasionally; the terminal renders raw text, so strip.
+    const responseBody: { reply: string; actions?: ToolAction[]; trace?: string[] } = {
+      reply: result.text.replace(/\*\*/g, "") || "…the agent stared blankly. try again.",
     };
     if (result.actions.length > 0) {
       responseBody.actions = result.actions.slice(0, MAX_ACTIONS);
+    }
+    if (result.trace.length > 0) {
+      responseBody.trace = result.trace.slice(0, MAX_TRACE);
     }
 
     return json(responseBody, 200, {
